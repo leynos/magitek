@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "connection": {
+    "max_sessions": 16,
+    "max_active_prompts": 8,
+    "max_outgoing_requests": 32,
+    "max_incoming_requests": 16,
+    "max_handler_jobs": 16,
+    "max_cpu_jobs": 2,
+    "max_waiting_calls": 32,
+    "max_routes": 64
+  },
+  "frame": {
+    "max_inbound_bytes": 1048576,
+    "max_outbound_bytes": 1048576,
+    "max_json_depth": 64,
+    "max_json_nodes": 65536,
+    "max_identifier_bytes": 256
+  },
+  "buffers": {
+    "max_owned_payload_bytes": 33554432,
+    "max_decoded_nodes": 131072,
+    "ingress": {
+      "items": 64,
+      "bytes": 4194304
+    },
+    "egress": {
+      "items": 128,
+      "bytes": 4194304
+    },
+    "events": {
+      "items": 256,
+      "bytes": 8388608
+    }
+  },
+  "reserve": {
+    "egress_control_items": 64,
+    "egress_control_bytes": 262272,
+    "max_control_frame_bytes": 4096,
+    "terminal_event_items": 9
+  },
+  "deadlines_ms": {
+    "admission": 250,
+    "initialize": 15000,
+    "request": 30000,
+    "partial_frame": 5000,
+    "processing": 5000,
+    "write": 5000,
+    "handler": 30000,
+    "permission": 300000,
+    "drain": 5000,
+    "cancel_grace": 5000,
+    "close": 5000
+  },
+  "global": {
+    "max_connections": 64,
+    "max_owned_payload_bytes": 268435456,
+    "max_handler_jobs": 64,
+    "max_cpu_jobs": 4,
+    "max_waiting_calls": 256
+  }
+}
