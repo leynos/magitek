@@ -1,0 +1,23 @@
+# Repository-specific identifiers, quotations and deliberate fixtures.
+
+schema = 1
+
+[oxford]
+stems = []
+
+[words]
+accepted = []
+
+[words.corrections]
+
+[patterns]
+ignore = [
+  # Exact compiler-analysis proper name, without accepting a prose spelling.
+  '\bPolonius\b',
+  # Inline code spans were masked by the previous dictionary snapshot; kept
+  # until the shared dictionary rules on it.
+  '`[^`\n]+`',
+]
+
+[files]
+exclude = []

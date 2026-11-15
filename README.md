@@ -8,9 +8,12 @@ ordered event delivery, deadlines, and explicit failure outcomes. Reusable
 framing and accounting primitives form a separate layer for other protocol
 roles, including Podbot's proxy.
 
-**Status: design proposal.** This repository contains project documentation.
-There is no Rust implementation to install or run. Dependency selection, the
-public API, and release packaging remain open qualification decisions.
+**Status: tooling baseline.** This repository contains the project
+documentation and a dependency-free Rust library scaffold with formatting,
+lint, test, coverage, and CI entry points. The ACP protocol, host API, and
+runtime are not implemented, so there is no protocol behaviour to install or
+run. Dependency selection, the public API, and release packaging remain open
+qualification decisions.
 
 ______________________________________________________________________
 
@@ -107,9 +110,27 @@ establish equivalent lifecycle or recovery guarantees.
 
 ______________________________________________________________________
 
+## Develop
+
+The library scaffold carries the shared build spine. Install the pinned
+toolchain and linkers, then run the checks:
+
+```sh
+make install-build-tools
+make all typecheck
+```
+
+`make all` covers formatting, lint, tests, tooling integration, shared workflow
+contracts, and spelling; `make typecheck` adds the compiler check. `make
+coverage` writes an LCOV report. The [developer guide][developers] lists
+prerequisites, test lanes, coverage commands, and CI administration.
+
+______________________________________________________________________
+
 ## Learn more
 
 - [Documentation contents][contents] – the complete documentation index.
+- [Developer guide][developers] – local commands, test lanes, and CI.
 - [Terms of reference][terms] – purpose, stakeholders, scope, and constraints.
 - [Context][context] – source evidence, integration needs, and alternatives.
 - [Design][design] – proposed architecture and operational contracts.
@@ -136,6 +157,7 @@ versions and reproducible traces when reporting compatibility findings.
 
 [acp]: https://agentclientprotocol.com/
 [contents]: docs/contents.md
+[developers]: docs/developers-guide.md
 [terms]: docs/terms-of-reference.md
 [context]: docs/context.md
 [design]: docs/magitek-design.md
