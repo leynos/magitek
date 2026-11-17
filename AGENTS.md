@@ -230,10 +230,14 @@ cloned only on insertion, and error context is built lazily. See
 
     ```sh
     cargo fmt --all -- --check
+    mdtablefix --check --git --include-untracked --wrap --renumber --breaks --ellipsis --fences
     ```
 
-    validating formatting across the entire workspace without modifying files.
-  - `make lint` executes:
+    validating Rust formatting across the entire workspace and Markdown
+    formatting for every Git-tracked and untracked, non-ignored file, without
+    modifying any of them. `mdtablefix` 0.6.0 or later is required.
+  - `make lint` runs `lint-yaml`, `lint-actions`, and `lint-shell` before
+    executing:
 
     ```makefile
     RUSTDOCFLAGS="$(RUSTDOC_FLAGS)" RUSTFLAGS="$(DEV_RUST_FLAGS)" cargo doc --no-deps
@@ -242,8 +246,10 @@ cloned only on insertion, and error context is built lazily. See
     ```
 
     building documentation before linting every target with all features
-    enabled. Documentation warnings, Clippy warnings, and Whitaker findings
-    fail the command.
+    enabled. The prerequisite targets lint the Git-tracked YAML files, the
+    GitHub Actions workflows, and the tracked shell scripts. Documentation
+    warnings, Clippy warnings, Whitaker findings, and a failing prerequisite
+    all fail the command.
   - `make test` executes:
 
     ```makefile
@@ -261,8 +267,8 @@ cloned only on insertion, and error context is built lazily. See
     separately under the serialized UI profile; the `cargo test` fallback
     cannot express that exclusion and runs them here. It then runs all-feature
     workspace doctests separately with Rustdoc warnings denied.
-    Use `make fmt` (`cargo fmt --all`) to apply formatting fixes reported
-    by the formatter check.
+    Use `make fmt` (`cargo fmt --all` and `mdtablefix --in-place`) to apply
+    formatting fixes reported by the formatter check.
 - Clippy warnings MUST be disallowed.
 - Fix any warnings emitted during tests in the code itself rather than
   silencing them.
