@@ -47,8 +47,8 @@ extend-ignore-re = [
     "\\brust-analyzer\\b",
     "\\{COLOR\\}",
     "\\{color\\}",
-    "`[^`\\n]+`",
     "`color`",
+    "`mold`",
     "`var\\.iamge_id` instead of `var\\.image_id`",
     "currentColor",
 ]

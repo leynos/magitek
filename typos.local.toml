@@ -14,9 +14,9 @@ accepted = []
 ignore = [
   # Exact compiler-analysis proper name, without accepting a prose spelling.
   '\bPolonius\b',
-  # Inline code spans were masked by the previous dictionary snapshot; kept
-  # until the shared dictionary rules on it.
-  '`[^`\n]+`',
+  # The linker's own name, which the en-GB dictionary reads as a misspelling
+  # of "mould". Accept only the code-formatted identifier.
+  '`mold`',
 ]
 
 [files]
