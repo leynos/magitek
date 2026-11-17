@@ -53,8 +53,8 @@ testing dependencies to Cargo.toml.
   documentation examples.
 - [rstest fixtures](rust-testing-with-rstest-fixtures.md) – reusable and
   parameterized test setup.
-- [Complexity and refactoring](complexity-antipatterns-and-refactoring-strategies.md) –
-  maintainable code structure.
+- [Complexity and refactoring](complexity-antipatterns-and-refactoring-strategies.md)
+  – maintainable code structure.
 - [Scripting standards](scripting-standards.md) – helper-script conventions.
 
 The technical design's section 5 defines the cross-field constraints that JSON

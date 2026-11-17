@@ -91,10 +91,12 @@ tests are introduced. See [baseline provenance](baseline-provenance.md).
 `make coverage` requires nextest and writes lcov.info using LLVM and lld. The
 current empty library has no executable production statements, so its report is
 not a product-coverage claim. The imported fixture separately verifies that
-real executable code produces non-zero function coverage. Hosted lanes run UI
-tests before `scripts/exclude-ui-targets.sh` narrows nextest's default profile.
-That helper retains target sources, is idempotent, and rejects conflicting
-filters. Run it only in disposable CI checkouts.
+real executable code produces non-zero function coverage, and a negative
+control forces a backend that cannot instrument so the run fails instead of
+leaving an empty report. Hosted lanes run UI tests before
+`scripts/exclude-ui-targets.sh` narrows nextest's default profile. That helper
+retains target sources, is idempotent, and rejects conflicting filters. Run it
+only in disposable CI checkouts.
 
 ## Formatting and documentation
 
@@ -111,19 +113,21 @@ from the shared Oxford British dictionary and typos.local.toml, then checks
 Markdown prose. Never hand-edit the generated dictionary or drift-check it in
 CI: shared dictionary updates are intentional. Put narrow identifier or quoted
 fixture exceptions in the local overlay. `make markdownlint` also runs spelling;
-`make nixie` validates Mermaid diagrams.
+`make nixie` validates Mermaid diagrams. CI provisions the pinned Nixie and
+Merman releases and runs `make nixie`, so a diagram that fails locally fails
+the pull request too.
 
 ## CI and repository administration
 
-PR CI checks formatting, documentation, lint, tooling, UI tests, and coverage.
-It skips whole-lockfile audits for Dependabot to avoid blocking unrelated
-updates with existing advisories. The weekly audit is the compensating check.
-Scheduled mutation testing temporarily sets `allow-no-mutants: true` because
-the library has no implementation to mutate; remove that input when mutable
-production code is added. Mutation testing is informational; surviving
-mutations need triage, not an assumed successful quality result. There is no
-binary release workflow, Act duplicate test lane, delayed-comment caller, or
-automatic merge workflow.
+PR CI checks formatting, Markdown and Mermaid validation, spelling, lint,
+tooling, UI tests, and coverage. It skips whole-lockfile audits for Dependabot
+to avoid blocking unrelated updates with existing advisories. The weekly audit
+is the compensating check. Scheduled mutation testing temporarily sets
+`allow-no-mutants: true` because the library has no implementation to mutate;
+remove that input when mutable production code is added. Mutation testing is
+informational; surviving mutations need triage, not an assumed successful
+quality result. There is no binary release workflow, Act duplicate test lane,
+delayed-comment caller, or automatic merge workflow.
 
 Dependabot checks Actions, Cargo, and the Rust toolchain daily, groups shared
 Actions and routine minor/patch updates, allows five open updates per

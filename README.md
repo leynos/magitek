@@ -19,14 +19,14 @@ ______________________________________________________________________
 
 ## Why Magitek?
 
-An async API says when work can wait. It doesn't say how much work may wait.
-A bounded channel also provides little protection when the next component
-accepts everything into an unbounded queue.
+An async API says when work can wait. It doesn't say how much work may wait. A
+bounded channel also provides little protection when the next component accepts
+everything into an unbounded queue.
 
 The proposed contract follows retained work across those boundaries. It counts
 frames, bytes, outstanding requests, callbacks, and waiting producers, and
-defines what happens when each budget runs out. A slow consumer must produce
-an observable overload outcome without accumulating unlimited work or silently
+defines what happens when each budget runs out. A slow consumer must produce an
+observable overload outcome without accumulating unlimited work or silently
 discarding transcript updates.
 
 The initial consumers have different responsibilities. The planned Rust Lody
@@ -91,15 +91,15 @@ ______________________________________________________________________
 Magitek's proposed client owns ACP interaction within one connection. Its host
 owns the environment and the consequences of agent work.
 
-| Responsibility | Proposed owner |
-| --- | --- |
-| ACP negotiation, correlation, event order, and admission | Magitek client |
-| Framing and resource-reservation primitives | Reusable Magitek layer |
-| Proxy inspection, authorization, and forwarding policy | Podbot |
-| Process launch, placement, termination, and restart | Host |
-| Filesystem authority and permission decisions | Host |
-| Command journals, durable history, Loro sync, and recovery | Host |
-| Ishiban work-item identity and workflow state | Ishiban and its adapters |
+| Responsibility                                             | Proposed owner           |
+| ---------------------------------------------------------- | ------------------------ |
+| ACP negotiation, correlation, event order, and admission   | Magitek client           |
+| Framing and resource-reservation primitives                | Reusable Magitek layer   |
+| Proxy inspection, authorization, and forwarding policy     | Podbot                   |
+| Process launch, placement, termination, and restart        | Host                     |
+| Filesystem authority and permission decisions              | Host                     |
+| Command journals, durable history, Loro sync, and recovery | Host                     |
+| Ishiban work-item identity and workflow state              | Ishiban and its adapters |
 
 _Table 1: Proposed responsibility boundaries._
 
@@ -121,8 +121,8 @@ make all typecheck
 ```
 
 `make all` covers formatting, lint, tests, tooling integration, shared workflow
-contracts, and spelling; `make typecheck` adds the compiler check. `make
-coverage` writes an LCOV report. The [developer guide][developers] lists
+contracts, and spelling; `make typecheck` adds the compiler check.
+`make coverage` writes an LCOV report. The [developer guide][developers] lists
 prerequisites, test lanes, coverage commands, and CI administration.
 
 ______________________________________________________________________
