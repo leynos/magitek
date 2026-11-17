@@ -1,0 +1,348 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Magitek draft resource policy",
+  "description": "Proposed policy shape for design review. Values are finite positive integers. This schema does not express cross-field relations or qualify runtime bounds; see magitek-design.md section 5.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "connection",
+    "frame",
+    "buffers",
+    "reserve",
+    "deadlines_ms",
+    "global"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "connection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_sessions",
+        "max_active_prompts",
+        "max_outgoing_requests",
+        "max_incoming_requests",
+        "max_handler_jobs",
+        "max_cpu_jobs",
+        "max_waiting_calls",
+        "max_routes"
+      ],
+      "properties": {
+        "max_sessions": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_active_prompts": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_outgoing_requests": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_incoming_requests": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_handler_jobs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_cpu_jobs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_waiting_calls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_routes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      }
+    },
+    "frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_inbound_bytes",
+        "max_outbound_bytes",
+        "max_json_depth",
+        "max_json_nodes",
+        "max_identifier_bytes"
+      ],
+      "properties": {
+        "max_inbound_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_outbound_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_json_depth": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_json_nodes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_identifier_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      }
+    },
+    "buffers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_owned_payload_bytes",
+        "max_decoded_nodes",
+        "ingress",
+        "egress",
+        "events"
+      ],
+      "properties": {
+        "max_owned_payload_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_decoded_nodes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "ingress": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "items",
+            "bytes"
+          ],
+          "properties": {
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          }
+        },
+        "egress": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "items",
+            "bytes"
+          ],
+          "properties": {
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          }
+        },
+        "events": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "items",
+            "bytes"
+          ],
+          "properties": {
+            "items": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647,
+              "description": "Queued and issued event leases until drop or committed transfer, including empty payloads."
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 2147483647
+            }
+          }
+        }
+      }
+    },
+    "reserve": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "egress_control_items",
+        "egress_control_bytes",
+        "max_control_frame_bytes",
+        "terminal_event_items"
+      ],
+      "properties": {
+        "egress_control_items": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "egress_control_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_control_frame_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "terminal_event_items": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      }
+    },
+    "deadlines_ms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "admission",
+        "initialize",
+        "request",
+        "partial_frame",
+        "processing",
+        "write",
+        "handler",
+        "permission",
+        "drain",
+        "cancel_grace",
+        "close"
+      ],
+      "properties": {
+        "admission": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "initialize": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647,
+          "description": "Connection admission through validated initialization response."
+        },
+        "request": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647,
+          "description": "Non-prompt outgoing request admission through validated response."
+        },
+        "partial_frame": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "processing": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647,
+          "description": "Decoder admission through completion, including queued work."
+        },
+        "write": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "handler": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "permission": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647,
+          "description": "Incoming permission admission through validated decision."
+        },
+        "drain": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "cancel_grace": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "close": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      }
+    },
+    "global": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_connections",
+        "max_owned_payload_bytes",
+        "max_handler_jobs",
+        "max_cpu_jobs",
+        "max_waiting_calls"
+      ],
+      "properties": {
+        "max_connections": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647,
+          "description": "Admitted connection generations, including closed generations retaining owned state; released only at retirement."
+        },
+        "max_owned_payload_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_handler_jobs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_cpu_jobs": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        },
+        "max_waiting_calls": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2147483647
+        }
+      }
+    }
+  }
+}
