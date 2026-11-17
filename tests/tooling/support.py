@@ -6,6 +6,7 @@ import shutil
 import signal
 import subprocess
 import tempfile
+import tomllib
 import unittest
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -87,7 +88,10 @@ class RepositoryTest(unittest.TestCase):
         self.addCleanup(directory.cleanup)
         self.repo = Path(directory.name)
         self.env = child_environment(os.environ)
-        self.env["RUSTUP_TOOLCHAIN"] = "nightly-2026-11-12"
+        # Read the channel from the pin the fixture copies, so updating the
+        # toolchain does not leave these tests on a stale nightly.
+        pin = tomllib.loads((ROOT / "rust-toolchain.toml").read_text(encoding="utf-8"))
+        self.env["RUSTUP_TOOLCHAIN"] = pin["toolchain"]["channel"]
         for name in (
             "Makefile",
             "rust-toolchain.toml",
