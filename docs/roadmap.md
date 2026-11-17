@@ -47,8 +47,10 @@ qualification. See [magitek-design.md](magitek-design.md) §§1–5 and §10.
     loaders, storage engines, authentication clients, and container runtimes.
   - Evidence: the
     [baseline import](execplans/import-rust-template-repo-baseline.md) supplies
-    the documented commands, the crate declares no dependencies, and the
-    hosted `CI` workflow runs them.
+    the documented commands, and the crate declares no dependencies. Hosted
+    `CI` runs the formatting, Markdown, Mermaid, spelling, workflow-contract,
+    tooling-test, audit, lint, test, UI-test, and coverage targets; `make
+    build`, `make release`, and `make typecheck` were verified locally.
 - [ ] 1.1.2. Implement immutable resource-policy validation.
   - Requires 1.1.1.
   - See [magitek-design.md](magitek-design.md) §5 and the
