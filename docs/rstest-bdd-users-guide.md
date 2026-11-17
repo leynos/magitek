@@ -38,12 +38,18 @@ edition.
 toolchain through `rust-toolchain.toml`, so ordinary `cargo` and Clippy
 commands use stable Rust.
 
-### Formatting toolchain
+### Formatting toolchain (upstream checkouts)
 
-The workspace's `.rustfmt.toml` uses unstable formatting options. `make fmt` and
-`make check-fmt` therefore select the dated nightly formatter named by
-`FMT_TOOLCHAIN` in the Makefile, while every other Cargo invocation stays on
-stable. Install the matching formatter after installing the stable toolchain:
+> **Upstream only.** This section describes the `rstest-bdd` checkout. Magitek
+> pins a different nightly toolchain and has no `FMT_TOOLCHAIN`; follow the
+> [developer guide](developers-guide.md#compiler-and-linker-policy) and the
+> [Polonius policy](polonius.md) for the formatter this repository uses.
+
+The upstream workspace's `.rustfmt.toml` uses unstable formatting options.
+`make fmt` and `make check-fmt` therefore select the dated nightly formatter
+named by `FMT_TOOLCHAIN` in the upstream Makefile, while every other Cargo
+invocation stays on stable. Install the matching formatter after installing the
+stable toolchain:
 
 ```sh
 rustup toolchain install nightly-2026-08-07 --profile minimal --component rustfmt
@@ -1496,7 +1502,9 @@ defensively re-runs the reset before storing handles and observes the
 ```rust,no_run
 # use rstest_bdd_macros::given;
 # fn reset_state_before_assignment() {}
-# fn with_state<R>(_: impl FnOnce(&mut ()) -> R) -> R { unimplemented!() }
+# fn with_state<R>(operation: impl FnOnce(&mut ScenarioState) -> R) -> R {
+#     SCENARIO_STATE.with(|state| operation(&mut state.borrow_mut()))
+# }
 #[given("a fresh GPUI window is opened")]
 fn fresh_gpui_window_is_opened(
     #[from(rstest_bdd_harness_context)] context: &mut gpui::TestAppContext,
@@ -1532,7 +1540,17 @@ repository's pedantic lint profile:
 
 ```rust,no_run
 # use rstest_bdd_macros::{then, when};
-# fn current_handles() -> (gpui::Entity<()>, gpui::AnyWindowHandle) { unimplemented!() }
+# fn current_handles() -> (gpui::Entity<CounterView>, gpui::AnyWindowHandle) {
+#     with_state(|state| {
+#         let Some(entity) = state.entity else {
+#             panic!("scenario should have stored an entity handle");
+#         };
+#         let Some(window) = state.window else {
+#             panic!("scenario should have stored a window handle");
+#         };
+#         (entity, window)
+#     })
+# }
 #[when("the view is updated through a reconstructed visual context")]
 fn view_is_updated_through_reconstructed_visual_context(
     #[from(rstest_bdd_harness_context)] context: &mut gpui::TestAppContext,
@@ -2169,10 +2187,12 @@ Async scenarios run on Tokio's current-thread runtime. Step functions may be
 predictable. This section summarizes the canonical guidance in
 [Migration and async patterns][migration-async-patterns].
 
-- **Prefer async fixtures:** If a step needs async data, move the async call
-  into a fixture and inject the resolved value into the step. The scenario
-  runtime awaits the fixture once, then passes the result to the synchronous
-  step.
+- **Resolve async data in a fixture:** If a step needs async data, move the
+  async call into a fixture and inject the resolved value into the step.
+  `scenarios!` generates a synchronous test function under its harness, so
+  rstest cannot await an `async fn` fixture there; resolve the future inside a
+  synchronous fixture and declare its type in `fixtures = [name: Type, ...]`.
+  The resolved value is passed to the synchronous step.
 
 ```rust,no_run
 use rstest::fixture;
@@ -2188,9 +2208,16 @@ impl StreamEnd {
     fn trigger(&self) {}
 }
 
+// `scenarios!` generates a synchronous test function under its harness, so
+// rstest cannot await an `async fn` fixture; resolve the future before the
+// scenario runs.
 #[fixture]
-async fn stream_end() -> StreamEnd {
-    StreamEnd::connect().await
+fn stream_end() -> StreamEnd {
+    tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("build fixture runtime")
+        .block_on(StreamEnd::connect())
 }
 
 #[when("the stream ends")]
@@ -2202,7 +2229,7 @@ fn end_stream(stream_end: &StreamEnd) {
 scenarios!(
     "tests/features/streams.feature",
     harness = rstest_bdd_harness_tokio::TokioHarness,
-    fixtures = [stream_end]
+    fixtures = [stream_end: StreamEnd]
 );
 ```
 
@@ -2458,11 +2485,11 @@ Once feature files and step definitions are in place, scenarios run via the
 usual `cargo test` command. Test functions created by the `#[scenario]` macro
 behave like other `rstest` tests; they honour `#[tokio::test]` attributes if
 applied to the original function. Each scenario runs its steps sequentially in
-the order defined in the feature file. By default, missing steps emit a
-compile‑time warning and are checked again at runtime, so steps can live in
-other crates. Enabling the `compile-time-validation` feature on
-`rstest-bdd-macros` registers steps and performs compile‑time validation,
-emitting warnings for any that are missing. The
+the order defined in the feature file. By default, compile‑time step validation
+is disabled, so a missing step is reported only when the scenario runs and
+steps can still live in other crates. Enabling the `compile-time-validation`
+feature on `rstest-bdd-macros` registers steps and performs compile‑time
+validation, emitting warnings for any that are missing. The
 `strict-compile-time-validation` feature builds on this and turns those
 warnings into `compile_error!`s when all step definitions are local. This
 prevents behaviour specifications from silently drifting from the code while
@@ -3293,9 +3320,10 @@ fn main() {
 Cargo scans a `rerun-if-changed` **directory** recursively, so a single
 directory line covers new files and subdirectories; a hand-maintained per-file
 list can silently omit a new subdirectory, which is the failure mode this
-mechanism exists to prevent. The snippet above is executed by this repository's
-test suite (it is extracted from this document and run against a scratch crate,
-see the [developers' guide][developers-guide]), so it cannot rot.
+mechanism exists to prevent. The snippet above is executed by the upstream
+`rstest-bdd` test suite (it is extracted from that repository's copy of this
+document and run against a scratch crate, see the upstream
+[developers' guide][developers-guide]), so it cannot rot.
 
 #### Cost
 
