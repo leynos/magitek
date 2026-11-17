@@ -48,6 +48,13 @@ jobs:
         uses: astral-sh/setup-uv@12d13f90bc3a5a1971bebad4beb09a4dfa962e91
       - name: Install the YAML lint tools
         uses: leynos/shared-actions/.github/actions/install-yaml-lint@26c918632c5413039a84358fafe012a4399a9ec7
+      # `make nixie` is a public target, so CI provisions exactly the Nixie and
+      # Merman versions it needs instead of leaving Mermaid validation to the
+      # developer's machine.
+      - name: Install Nixie
+        uses: leynos/shared-actions/.github/actions/install-nixie@26c918632c5413039a84358fafe012a4399a9ec7
+      - name: Validate Mermaid diagrams
+        run: make nixie
       - name: Check workflow contracts
         run: make test-workflow-contracts
       - name: Check spelling

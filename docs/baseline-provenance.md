@@ -8,21 +8,21 @@ at `e2327fdbd216d627ee23538bf32cd437af5e7be7`. Youxia originally imported
 revision `206c82d52b276903e4f9f1df0ebf85a2938a99bb`; the newer template
 snapshot supplies its reviewed Cargo configuration corrections.
 
-| Area                                      | Source and adaptation                                                                       |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Shared reference guides                   | Youxia snapshot, retained as development reference material.                                |
-| AGENTS.md                                 | Youxia guidance, with project-facing documentation links adapted.                           |
-| Cargo lints, rustfmt, Clippy              | Youxia snapshot; package metadata names the Magitek library.                                |
-| Toolchain and Polonius                    | Youxia dated nightly and components.                                                        |
-| Cargo defaults                            | Template library configuration with Polonius enabled and Linux linker selection.            |
-| Makefile                                  | Template library render, plus Youxia tooling target and nextest coverage guard.             |
-| Shell helpers and tool pins               | Youxia snapshot, preserving bytes and executable modes.                                     |
-| Tooling tests                             | Youxia suite; temporary directory prefix, backend fixture, and Git-isolation setup adapted. |
-| Test stub                                 | Youxia package-name check adapted to Magitek; temporary until real tests exist.             |
-| YAML, Markdown, coverage configuration    | Youxia snapshot; CV-005 repository name adapted.                                            |
-| PR CI, publisher, audit, mutation callers | Youxia snapshot, with documented prerequisite and library adaptations.                      |
-| Dependabot                                | Current template policy, retaining grouping, cooldowns, and default labels.                 |
-| README, developer guide, layout, contents | Adapted to the Magitek scaffold and the product documentation on `main`.                   |
+| Area                                      | Source and adaptation                                                                                      |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Shared reference guides                   | Youxia snapshot, retained as development reference material.                                               |
+| AGENTS.md                                 | Youxia guidance, with project-facing documentation links adapted.                                          |
+| Cargo lints, rustfmt, Clippy              | Youxia snapshot; package metadata names the Magitek library.                                               |
+| Toolchain and Polonius                    | Youxia dated nightly and components.                                                                       |
+| Cargo defaults                            | Template library configuration with Polonius enabled and Linux linker selection.                           |
+| Makefile                                  | Template library render, plus Youxia tooling target and nextest coverage guard.                            |
+| Shell helpers and tool pins               | Youxia snapshot, preserving bytes and executable modes.                                                    |
+| Tooling tests                             | Youxia suite; temporary directory prefix, backend fixture, Git-isolation setup, and compile bound adapted. |
+| Test stub                                 | Youxia package-name check adapted to Magitek; temporary until real tests exist.                            |
+| YAML, Markdown, coverage configuration    | Youxia snapshot; CV-005 repository name adapted.                                                           |
+| PR CI, publisher, audit, mutation callers | Youxia snapshot, plus a pinned Nixie gate for the public Mermaid target and library adaptations.           |
+| Dependabot                                | Current template policy, retaining grouping, cooldowns, and default labels.                                |
+| README, developer guide, layout, contents | Adapted to the Magitek scaffold and the product documentation on `main`.                                   |
 
 _Table 1: Sources and local adaptations._
 
@@ -43,7 +43,13 @@ No additional tests duplicate the imported suite. The coverage fixture uses the
 adopted template's development rustflags. Coverage replaces those flags to
 select LLVM; no unstable Cargo profile override is retained. Empty-library
 coverage is not evidence of protocol behaviour; the fixture supplies the
-non-zero instrumentation check.
+non-zero instrumentation check. The plan's backend-error control is new to this
+import because neither reference repository seeds one: a second fixture forces
+the Cranelift backend into an instrumented run and requires the failure, so an
+empty report cannot pass as clean coverage. Every lane fixture compiles a crate
+from scratch and so shares the host's compiler-admission queue; their bound is
+widened beyond the imported value because a single coverage lane spent 479
+seconds waiting for a slot, while a hung lane still exceeds the bound.
 
 The Cargo configuration explicitly retains the conventional build-directory
 layout, which cargo-llvm-cov 0.8.4 requires for object discovery on the pinned
@@ -59,7 +65,7 @@ nesting, rstest file-glob example, linked-library doctest helpers, and the
 environment-injection guidance. The tagged guides identify their actual refresh
 source rather than a script absent from this repository. The existing
 Git-isolation fixture now filters its setup environment and disables signing
-for its temporary commit. No tests were added.
+for its temporary commit. Those corrections added no tests.
 
 The publisher retains the reference policy that only main push events advance
 the ratchet baseline. No automatic merge workflow is installed, so a review

@@ -10,7 +10,11 @@ from support import GRACEFUL_STOP_SECONDS, ROOT, CommandOptions, RepositoryTest
 # Each fixture is a fresh checkout, so its crate compiles from scratch, and that
 # compile shares the host's compiler-admission queue. A one-minute bound would
 # measure queue latency rather than the lane; keep the run bounded, but wide.
-COMPILE_TIMEOUT = 300
+# The bound is deliberately generous: a single coverage lane measured 479
+# seconds of nearly pure queue wait while every admission slot was held by
+# unrelated work, so a tighter bound fails the lane for the host's load rather
+# than for its behaviour.
+COMPILE_TIMEOUT = 900
 
 
 def _seconds(duration: str) -> float:
@@ -259,6 +263,48 @@ fn covered() { assert_eq!(lane_probe::answer(), 42, "Fixture answer must be 42")
             (self.repo / "lcov.info").read_text(),
             r"(?m)^FNDA:[1-9]\d*,",
             "The public coverage route must produce instrumented data",
+        )
+
+    def test_coverage_reports_a_backend_that_cannot_instrument(self):
+        """A backend error must fail coverage instead of yielding empty data.
+
+        The positive fixture proves that a healthy LLVM build produces non-zero
+        function coverage. This negative control seeds the failure the check
+        must catch: Cranelift cannot emit `-Cinstrument-coverage`, so a
+        coverage run that reaches it is broken instrumentation, not a report
+        with zero coverage. Accepting an empty `lcov.info` here would let a
+        misconfigured backend pass as clean.
+        """
+        self.write(
+            "src/lib.rs", "//! Coverage fixture.\npub fn answer() -> u32 { 42 }\n"
+        )
+        self.probe(
+            "ordinary",
+            """//! Exercise instrumented library code.
+#[test]
+fn covered() { assert_eq!(lane_probe::answer(), 42, "Fixture answer must be 42"); }
+""",
+        )
+        # Re-state the coverage flags because a command-line assignment
+        # replaces the Makefile's inherited value rather than adding to it.
+        cranelift_flags = (
+            "-D warnings -Zpolonius=next -Zcodegen-backend=cranelift "
+            "-C link-arg=-fuse-ld=lld"
+        )
+        result = self.make(
+            "coverage",
+            "CHECK_COVERAGE_TOOLS=true",
+            f"COVERAGE_RUST_FLAGS={cranelift_flags}",
+            command=CommandOptions(expected="failure", timeout=COMPILE_TIMEOUT),
+        )
+        self.assertIn(
+            "not supported by Cranelift",
+            result.stdout,
+            "Coverage must surface the backend error rather than hide it",
+        )
+        self.assertFalse(
+            (self.repo / "lcov.info").exists(),
+            "Broken instrumentation must not leave a coverage report",
         )
 
     def test_harness_outlasts_every_configured_nextest_grace_period(self) -> None:
