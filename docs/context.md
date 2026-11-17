@@ -102,7 +102,7 @@ The documentation uses three knowledge classes:
   by an identified source. A known requirement describes desired behaviour; it
   does not establish implementation.
 - **Assumed:** a load-bearing inference awaiting evidence. The terms of
-  reference records the consequence if it fails.
+  reference record the consequence if it fails.
 - **Open:** a decision or fact not yet established. A named qualification gate
   must close it before dependent claims become valid.
 
