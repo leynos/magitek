@@ -1,11 +1,12 @@
-"""Inspect a workflow's jobs for a mold installation before the test lane.
+"""Inspect a workflow's jobs for a mold installation before the test lanes.
 
-`make test` links development binaries with mold, and its `check-build-tools`
-prerequisite stops the lane when the linker is absent. A workflow that runs the
-lane therefore has to install mold in the same job and before the test step.
-These helpers answer that question from the workflow text alone: the tooling
-suite takes no third-party dependency, so it reads the job heading and the step
-item rather than parsing the whole document as YAML.
+`make test` and `make test-ui` link development binaries with mold, and their
+shared `check-build-tools` prerequisite stops the lane when the linker is
+absent. A workflow that runs either lane therefore has to install mold in the
+same job and before the test step. These helpers answer that question from the
+workflow text alone: the tooling suite takes no third-party dependency, so it
+reads the job heading and the step item rather than parsing the whole document
+as YAML.
 """
 
 import re
@@ -13,9 +14,15 @@ from typing import NamedTuple
 
 JOB_HEADING = re.compile(r"(?m)^  (?P<name>[A-Za-z0-9_-]+):\s*$")
 RUN_KEY = re.compile(r"(?m)^(?P<indent>[ ]*)(?:- )?run:[ ]*(?P<value>.*)$")
-TEST_COMMAND = re.compile(r"^make test(?:\s|$)")
+# `make test-ui` shares the linker prerequisite, while longer targets such as
+# `make test-tooling` do not run either lane and must stay unmatched.
+TEST_COMMAND = re.compile(r"^make test(?:-ui)?(?:\s|$)")
 BLOCK_MARKERS = frozenset({"|", ">", "|-", ">-", "|+", ">+"})
 STEP_ITEM = re.compile(r"(?m)^(?P<indent>[ ]*)-[ ](?P<opening>.*)$")
+# A step's own key follows the opening dash or sits at the column the opening
+# key established. Recording that column lets a `with:` mapping be told apart
+# from a sibling `env:` mapping whose children have the same indentation.
+STEP_MAPPING_KEY = re.compile(r"^[ ]*(?:-[ ]+)?(?P<key>[A-Za-z0-9_.-]+):(?:[ ]|$)")
 # A line whose value is a block marker opens a body of quoted text. `run: |` is
 # the common case, and the chomping variants appear in real workflows too.
 BLOCK_OPENER = re.compile(r"^[ ]*(?:-[ ]+)?[A-Za-z0-9_.-]+:[ ]*[|>][+-]?[ ]*$")
@@ -150,16 +157,63 @@ def action_lines(step: str) -> list[str]:
     return kept
 
 
+def _step_mapping_indent(lines: list[str]) -> int | None:
+    """Return the column where a step's own mapping keys begin.
+
+    A step opens as `- key:`, and every sibling key aligns with that first key.
+    That column is the reference for separating `uses:`, `with:`, and `env:`
+    from their more deeply indented children.
+    """
+    opening = STEP_MAPPING_KEY.match(lines[0])
+    return None if opening is None else opening.start("key")
+
+
+def _key_at(line: str, indent: int) -> str | None:
+    """Name a mapping key that starts in the given column, if any."""
+    key = STEP_MAPPING_KEY.match(line)
+    if key is None or key.start("key") != indent:
+        return None
+    return key.group("key")
+
+
+def _with_body(lines: list[str], indent: int | None) -> list[str] | None:
+    """Return the lines owned by the step's `with:` mapping.
+
+    The pinned setup action reads `install-mold` from `with:` only, so a
+    same-named key under a sibling `env:` mapping must not count. A more
+    indented line belongs to `with:`; the next sibling key ends it.
+    """
+    if indent is None:
+        return None
+    for index, line in enumerate(lines):
+        if _key_at(line, indent) != "with":
+            continue
+        body = []
+        for later in lines[index + 1 :]:
+            if not later.strip():
+                continue
+            if _indent(later) <= indent:
+                break
+            body.append(later)
+        return body
+    return None
+
+
 def _installs_mold(step: str) -> bool:
     """Say whether a step hands the input key to the shared setup action.
 
-    Both keys must be the step's own YAML. Reading every line of the step
-    rather than only the lines above the input keeps the answer independent of
-    key order, because a step mapping may list `with:` before `uses:`.
+    Both facts must belong to the same step: the action reference identifies a
+    step that understands the input, and the key must sit under that step's
+    `with:` mapping. Searching every line would accept an `env:` entry the
+    pinned action ignores, while requiring a fixed key order would reject a
+    valid step that lists `with:` before `uses:`.
     """
     lines = action_lines(step)
     installs = any(MOLD_INSTALLING_ACTION.match(line) for line in lines)
-    requested = any(MOLD_INSTALL.match(line) for line in lines)
+    with_body = _with_body(lines, _step_mapping_indent(lines))
+    requested = with_body is not None and any(
+        MOLD_INSTALL.match(line) for line in with_body
+    )
     return installs and requested
 
 

@@ -162,10 +162,11 @@ capabilities into implemented API documentation.
 
 The imported test helper in tests/tooling/workflow_lane.py recognizes the
 generated workflow style used in this repository, rather than arbitrary YAML.
-Keep `run: make test` unquoted or use a literal block. Keep action inputs
-directly under `with`, and do not embed dashed YAML step examples in script
-blocks. Quoted scalars, nested mapping ownership, and arbitrary YAML examples
-are outside this text scanner's supported syntax. actionlint validates actual
-workflow syntax, and the real build preflight checks linker availability.
-Extending the scanner to other workflow styles is separate work requiring
-additional cases; this import retains the existing tested helper.
+Keep `run: make test` or `run: make test-ui` unquoted or use a literal block.
+Keep action inputs directly under `with`, not under a step's `env` mapping, and
+do not embed dashed YAML step examples in script blocks. Quoted scalars, nested
+mapping ownership, and arbitrary YAML examples are outside this text scanner's
+supported syntax. actionlint validates actual workflow syntax, and the real
+build preflight checks linker availability. Extending the scanner to other
+workflow styles is separate work requiring additional cases; this import
+retains the existing tested helper.

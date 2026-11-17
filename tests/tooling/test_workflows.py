@@ -168,6 +168,71 @@ jobs:
       - run: make test
 """
 
+# `make test-ui` shares the `check-build-tools` prerequisite with `make test`,
+# so a UI-only lane needs the linker just as much. A pattern that matched only
+# `make test` would let this job reach the hosted runner without mold.
+UI_TEST_LANE_WITHOUT_MOLD = """\
+name: Fixture
+
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: make test-ui
+"""
+
+# A widened pattern is only useful if a provisioned UI-only lane still passes.
+UI_TEST_LANE_WITH_MOLD = """\
+name: Fixture
+
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: leynos/shared-actions/.github/actions/setup-rust@0000000000000000000000000000000000000000
+        with:
+          install-mold: 'true'
+      - run: make test-ui
+"""
+
+# Near-miss targets such as `make test-tooling` and `make testing` neither run
+# the lane nor link with mold, so widening the pattern must not start
+# requiring the linker in those jobs.
+OTHER_TEST_TARGETS = """\
+name: Fixture
+
+on: push
+
+jobs:
+  tooling:
+    runs-on: ubuntu-latest
+    steps:
+      - run: make test-tooling
+      - run: make testing
+"""
+
+# The pinned setup action reads `install-mold` from its `with:` inputs, not
+# from the process environment. An identically named key under `env:` would
+# satisfy a search that ignored mapping ownership while installing nothing.
+MOLD_KEY_IN_ENV_WITHOUT_WITH = """\
+name: Fixture
+
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: leynos/shared-actions/.github/actions/setup-rust@0000000000000000000000000000000000000000
+        env:
+          install-mold: 'true'
+      - run: make test
+"""
+
 
 class WorkflowTests(RepositoryTest):
     """Verify the public checker invocation without copying its private rules."""
@@ -281,6 +346,35 @@ class WorkflowTests(RepositoryTest):
         self.assert_fixture_installs_mold(
             MOLD_INSTALL_OPENING_THE_STEP,
             "A step written as `- uses:` still installs mold",
+        )
+
+    def test_ui_test_lane_requires_the_linker(self) -> None:
+        """A `make test-ui` job without mold cannot satisfy its prerequisite."""
+        self.assert_fixture_is_missing_mold(
+            UI_TEST_LANE_WITHOUT_MOLD,
+            "A UI-only lane without mold must be reported",
+        )
+
+    def test_ui_test_lane_with_mold_is_accepted(self) -> None:
+        """The widened pattern must still accept a provisioned UI-only lane."""
+        self.assert_fixture_installs_mold(
+            UI_TEST_LANE_WITH_MOLD,
+            "A UI-only lane that installs mold must pass",
+        )
+
+    def test_other_test_targets_do_not_require_the_linker(self) -> None:
+        """Targets such as `make test-tooling` are not the public test lane."""
+        self.assertEqual(
+            test_lane_jobs(OTHER_TEST_TARGETS),
+            [],
+            "Unrelated `make test*` targets must not be treated as the lane",
+        )
+
+    def test_mold_install_must_belong_to_with(self) -> None:
+        """An `env:` entry installs nothing, because the action reads `with:`."""
+        self.assert_fixture_is_missing_mold(
+            MOLD_KEY_IN_ENV_WITHOUT_WITH,
+            "A key under `env:` must not satisfy the installation",
         )
 
     def test_shared_checker_rejects_a_pr_secret_leak(self) -> None:
