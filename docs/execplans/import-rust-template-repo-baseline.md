@@ -17,8 +17,10 @@ The selected checkout is
 on branch `import-rust-template-repo-baseline`. At inspection, HEAD is
 `dff8055` and the working tree is clean. Git tracks only README.md and
 .gitignore. There was no Cargo manifest, source, test suite, repository
-guidance, or CI. The subsequently identified design branch contains the
-technical design and terms of reference; those documents remain separate.
+guidance, or CI. The subsequently identified design branch contained the
+technical design and terms of reference; they were separate at inspection and
+are now on `main` at `25647df`, so this baseline reads them from the target
+branch.
 
 The primary example is [Youxia PR #7](https://github.com/leynos/youxia/pull/7)
 at `a425e64043ef029fe3b67343bee0487418c9ab2d`. Its import used
@@ -35,10 +37,11 @@ design branch `origin/docs/magitek-design-and-roadmap` at
 `bfef49cbf10912ccf8ed246d4760bbb21f96c01b` supplies the terms of reference,
 technical design, and roadmap. In particular, design section 4 requires a
 single crate and host-owned runtime; roadmap 1.1.1 covers the build spine.
-Those documents remain on their own branch. Keep a provenance record
-identifying the selected revision and any adaptation for each imported area. Do
-not present Youxia's design, roadmap, or implementation history as Magitek's
-own.
+Those documents were on their own branch at inspection. `main` now carries them
+at `25647df`, differing from `bfef49c` only in one line of `docs/context.md`.
+Keep a provenance record identifying the selected revision and any adaptation
+for each imported area. Do not present Youxia's design, roadmap, or
+implementation history as Magitek's own.
 
 - BASE-1: Repository guidance and reusable development documentation map to
   M1 and M3, accepted by resolved internal links and documentation gates.
@@ -134,6 +137,14 @@ clear record of differences rather than silently copying mixed revisions.
 `magitek` library without host implementation, application release metadata, or
 a binary workflow. Retain the undecided licence and runtime dependency choices
 from the design branch.
+
+2026-11-17: Complete roadmap 1.1.1 against the success criteria its entry
+states, not against import volume. The supported native build, formatting,
+lint, and fixture checks run through the documented Make targets, and the crate
+declares no dependencies, so core dependencies exclude configuration loaders,
+storage engines, authentication clients, and container runtimes. The roadmap
+entry records the same commands, links this plan as evidence, and distinguishes
+hosted workflow steps from local Make targets.
 
 2026-11-15: This draft stops before baseline implementation because the
 ExecPlan skill requires explicit approval after drafting. A subsequent hook
