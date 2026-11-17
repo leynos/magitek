@@ -1303,19 +1303,25 @@ case runs, making it easier to get consistent log output from tests.
 ### B. `logtest`: verifying log output
 
 `logtest` provides a lightweight logger that records emitted log records during
-tests. This makes it trivial to assert on log messages without interfering with
-other tests. Add it under `[dev-dependencies]` using an explicit version range:
+tests. It stores records in a queue that is shared across the whole test
+binary, so tests running in parallel can consume one another's records. Because
+Rust spawns per-test threads during integration testing, the crate recommends
+only a single `#[test]` block per test file to avoid race conditions. Add it
+under `[dev-dependencies]` using an explicit version range:
 
 ```toml
 [dev-dependencies]
 logtest = "^2.0"
 ```
 
-Start a `Logger` before running the code under test:
+Keep all log assertions for the binary in that single test, and start a
+`Logger` before running the code under test:
 
 ```rust,no_run
 use logtest::Logger;
 
+// Keep this the only `#[test]` in the file: the queue is per-binary and shared
+// by parallel tests.
 let mut logger = Logger::start();
 my_async_fn().await;
 assert!(logger.pop().is_some());
