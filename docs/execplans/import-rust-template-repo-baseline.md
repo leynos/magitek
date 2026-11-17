@@ -295,11 +295,12 @@ target builds the library; no binary publication workflow is installed.
 The repository now contains a dependency-free library scaffold, contributor and
 reference documentation, Rust lint policy, explicit build-tool installers,
 read-only preflights, bounded test lanes, imported tooling tests, and pinned
-CI, coverage, audit, and mutation workflows. The design branch remains
-separate. All requirements BASE-1 through BASE-4 are satisfied by the local
-acceptance evidence below. No protocol API, binary, runtime dependency, or
-licence choice was introduced. The separate roadmap is not modified by this
-import.
+CI, coverage, audit, and mutation workflows. The product documents that `main`
+already carried were combined into this baseline rather than kept on a separate
+design branch. All requirements BASE-1 through BASE-4 are satisfied by the
+local acceptance evidence below. No protocol API, binary, runtime dependency,
+or licence choice was introduced. The only roadmap change marks task 1.1.1,
+this import, complete with its evidence.
 
 Final acceptance passed `make all typecheck markdownlint nixie`: Rustdoc,
 Clippy, Whitaker, YAML, Actions, ShellCheck, formatting, spelling, one
