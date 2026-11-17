@@ -559,13 +559,14 @@ def test_reads_env_and_defaults(monkeypatch, tmp_path):
     monkeypatch.setenv("INPUT_BIN_NAME", "demo")
     monkeypatch.setenv("INPUT_VERSION", "1.2.3")
     monkeypatch.setenv("INPUT_FORMATS", "deb rpm")  # whitespace or newlines
+    monkeypatch.setenv("INPUT_DRY_RUN", "true")  # skip git tag and dist creation
 
     # Exercise
     result = invoke(app, [])
 
     # Assert
     assert result.exit_code == 0
-    assert '"version": "1.2.3"' in result.stdout
+    assert "'version': '1.2.3'" in result.stdout
 
 
 def test_patch_python_dependency(mocker):
