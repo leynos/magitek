@@ -4,8 +4,9 @@ This roadmap implements goals G1–G6 in the
 [terms of reference](terms-of-reference.md) through the proposed
 [technical design](magitek-design.md). The
 [context and evidence ledger](context.md) distinguishes inspected behaviour
-from unverified assumptions. All tasks remain proposed; neither an unchecked
-task nor a cited dependency establishes an implemented capability.
+from unverified assumptions. Every task without a checked box remains proposed;
+neither an unchecked task nor a cited dependency establishes an implemented
+capability.
 
 Goals, Ideas, Steps, and Tasks (GIST) organize the delivery sequence. Each
 phase states a falsifiable idea, each step answers a delivery question, and
@@ -38,12 +39,16 @@ Can one crate express the resource and failure contracts without acquiring host
 responsibilities? The answer determines the interfaces exercised by the engine
 qualification. See [magitek-design.md](magitek-design.md) §§1–5 and §10.
 
-- [ ] 1.1.1. Establish the single-crate build and continuous integration spine.
+- [x] 1.1.1. Establish the single-crate build and continuous integration spine.
   - Requires no earlier task.
   - See [magitek-design.md](magitek-design.md) §§4, 10, and 13.
   - Success: the supported native build, formatting, lint, and fixture checks
     run through documented commands; core dependencies exclude configuration
     loaders, storage engines, authentication clients, and container runtimes.
+  - Evidence: the
+    [baseline import](execplans/import-rust-template-repo-baseline.md) supplies
+    the documented commands, the crate declares no dependencies, and the
+    hosted `CI` workflow runs them.
 - [ ] 1.1.2. Implement immutable resource-policy validation.
   - Requires 1.1.1.
   - See [magitek-design.md](magitek-design.md) §5 and the
