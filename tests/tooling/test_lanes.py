@@ -5,16 +5,8 @@ import time
 from pathlib import Path
 
 import tomllib
+from lanes import COMPILE_TIMEOUT, LaneFixture
 from support import GRACEFUL_STOP_SECONDS, ROOT, CommandOptions, RepositoryTest
-
-# Each fixture is a fresh checkout, so its crate compiles from scratch, and that
-# compile shares the host's compiler-admission queue. A one-minute bound would
-# measure queue latency rather than the lane; keep the run bounded, but wide.
-# The bound is deliberately generous: a single coverage lane measured 479
-# seconds of nearly pure queue wait while every admission slot was held by
-# unrelated work, so a tighter bound fails the lane for the host's load rather
-# than for its behaviour.
-COMPILE_TIMEOUT = 900
 
 
 def _seconds(duration: str) -> float:
@@ -89,35 +81,8 @@ def wait_for(marker: Path, process: subprocess.Popen[str]) -> bool:
     return marker.exists()
 
 
-class LaneTests(RepositoryTest):
+class LaneTests(LaneFixture):
     """Check selected tests, cleanup boundaries and actual timeout termination."""
-
-    def setUp(self):
-        """Create a dependency-free crate whose tests leave observable markers."""
-        super().setUp()
-        self.write(
-            "Cargo.toml",
-            """[package]
-name = "lane-probe"
-version = "0.1.0"
-edition = "2024"
-""",
-        )
-        self.write("src/lib.rs", "//! Tooling fixture.\n")
-
-    def probe(self, name, body=None):
-        """Create a test that records execution and nextest group ownership."""
-        self.write(
-            "tests/" + name + ".rs",
-            body
-            or f"""//! Tooling fixture.
-#[test]
-fn {name}() {{
-    let group = std::env::var("NEXTEST_TEST_GROUP").unwrap_or_default();
-    std::fs::write("{name}.ran", group).expect("record fixture execution");
-}}
-""",
-        )
 
     def test_normal_ui_and_cargo_fallback_retain_tests(self):
         self.probe("ordinary")
@@ -157,155 +122,6 @@ fn {name}() {{
             command=CommandOptions(timeout=COMPILE_TIMEOUT),
         )
         self.assertIn("nothing to run", result.stdout)
-
-    def test_coverage_exclusion_preserves_targets_and_refuses_conflicts(self):
-        self.probe("ordinary")
-        self.probe("compile_probe")
-        self.run_command("bash", "scripts/exclude-ui-targets.sh")
-        config = self.repo / ".config/nextest.toml"
-        first = config.read_bytes()
-        self.run_command("bash", "scripts/exclude-ui-targets.sh")
-        self.assertEqual(config.read_bytes(), first, "Exclusion must be idempotent")
-        self.run_command(
-            "cargo", "nextest", "run", options=CommandOptions(timeout=COMPILE_TIMEOUT)
-        )
-        self.assertTrue(
-            (self.repo / "ordinary.ran").exists(),
-            "Coverage selection must retain ordinary tests",
-        )
-        self.assertFalse(
-            (self.repo / "compile_probe.ran").exists(),
-            "The shared coverage route must not execute UI tests",
-        )
-        self.make(
-            "test-ui",
-            "CHECK_BUILD_TOOLS=true",
-            command=CommandOptions(timeout=COMPILE_TIMEOUT),
-        )
-        self.assertTrue(
-            (self.repo / "compile_probe.ran").exists(),
-            "The UI profile must override coverage's default filter",
-        )
-        self.assertTrue(
-            (self.repo / "tests/compile_probe.rs").exists(),
-            "Exclusion must never remove target sources",
-        )
-        config.write_text(
-            config.read_text().replace("not binary(compile_*)", "test(ordinary)")
-        )
-        conflicting = config.read_bytes()
-        self.run_command(
-            "bash",
-            "scripts/exclude-ui-targets.sh",
-            options=CommandOptions(expected="failure"),
-        )
-        self.assertEqual(
-            config.read_bytes(),
-            conflicting,
-            "A conflicting filter must be preserved for diagnosis",
-        )
-
-    def test_coverage_requires_nextest_to_exclude_compile_targets(self):
-        result = self.make(
-            "coverage",
-            "CHECK_COVERAGE_TOOLS=true",
-            "TEST_CMD=test",
-            command=CommandOptions(expected="failure"),
-        )
-        self.assertIn(
-            "coverage requires cargo-nextest",
-            result.stdout,
-            "Coverage must refuse a fallback that would instrument UI targets",
-        )
-        self.assertFalse(
-            (self.repo / "lcov.info").exists(),
-            "Refused coverage must not write a report",
-        )
-
-    def test_coverage_overrides_the_development_cranelift_flags(self):
-        self.write(
-            ".cargo/config.toml",
-            """[build]
-rustflags = ["-Zthreads=8", "-Zcodegen-backend=cranelift"]
-[unstable]
-build-dir-new-layout = false
-""",
-        )
-        self.write(
-            "src/lib.rs", "//! Coverage fixture.\npub fn answer() -> u32 { 42 }\n"
-        )
-        self.write(
-            "src/main.rs",
-            "//! Mirror the application coverage boundary.\n"
-            "fn main() { std::hint::black_box(lane_probe::answer()); }\n",
-        )
-        self.probe(
-            "ordinary",
-            """//! Exercise instrumented library code.
-#[test]
-fn covered() { assert_eq!(lane_probe::answer(), 42, "Fixture answer must be 42"); }
-""",
-        )
-        sysroot = self.run_command("rustc", "--print", "sysroot").stdout.strip()
-        host = self.run_command("rustc", "-vV").stdout.split("host: ")[1].split()[0]
-        linker_dir = f"{sysroot}/lib/rustlib/{host}/bin/gcc-ld"
-        self.env["PATH"] = linker_dir + ":" + self.env["PATH"]
-        # Instrumenting the fixture compiles it from scratch, so a cold build
-        # can outlast the harness's one-minute default while compiler admission
-        # queues it behind unrelated work. Keep the run bounded, but wide enough
-        # that the assertion tests instrumentation rather than queue latency.
-        self.make(
-            "coverage",
-            "CHECK_COVERAGE_TOOLS=true",
-            command=CommandOptions(timeout=COMPILE_TIMEOUT),
-        )
-        self.assertRegex(
-            (self.repo / "lcov.info").read_text(),
-            r"(?m)^FNDA:[1-9]\d*,",
-            "The public coverage route must produce instrumented data",
-        )
-
-    def test_coverage_reports_a_backend_that_cannot_instrument(self):
-        """A backend error must fail coverage instead of yielding empty data.
-
-        The positive fixture proves that a healthy LLVM build produces non-zero
-        function coverage. This negative control seeds the failure the check
-        must catch: Cranelift cannot emit `-Cinstrument-coverage`, so a
-        coverage run that reaches it is broken instrumentation, not a report
-        with zero coverage. Accepting an empty `lcov.info` here would let a
-        misconfigured backend pass as clean.
-        """
-        self.write(
-            "src/lib.rs", "//! Coverage fixture.\npub fn answer() -> u32 { 42 }\n"
-        )
-        self.probe(
-            "ordinary",
-            """//! Exercise instrumented library code.
-#[test]
-fn covered() { assert_eq!(lane_probe::answer(), 42, "Fixture answer must be 42"); }
-""",
-        )
-        # Re-state the coverage flags because a command-line assignment
-        # replaces the Makefile's inherited value rather than adding to it.
-        cranelift_flags = (
-            "-D warnings -Zpolonius=next -Zcodegen-backend=cranelift "
-            "-C link-arg=-fuse-ld=lld"
-        )
-        result = self.make(
-            "coverage",
-            "CHECK_COVERAGE_TOOLS=true",
-            f"COVERAGE_RUST_FLAGS={cranelift_flags}",
-            command=CommandOptions(expected="failure", timeout=COMPILE_TIMEOUT),
-        )
-        self.assertIn(
-            "not supported by Cranelift",
-            result.stdout,
-            "Coverage must surface the backend error rather than hide it",
-        )
-        self.assertFalse(
-            (self.repo / "lcov.info").exists(),
-            "Broken instrumentation must not leave a coverage report",
-        )
 
     def test_harness_outlasts_every_configured_nextest_grace_period(self) -> None:
         """The harness must not kill nextest while it is still stopping tests.
