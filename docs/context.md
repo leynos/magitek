@@ -12,8 +12,8 @@
 Magitek addresses shared requirements of a native Rust Lody replacement and
 Podbot-backed hosts such as Corbusier. The brief calls for a bounded
 asynchronous Agent Client Protocol (ACP) client, with substantial work kept
-away from event loops. The proposed boundary preserves protocol information
-and exposes uncertainty.
+away from event loops. The proposed boundary preserves protocol information and
+exposes uncertainty.
 
 The Lody replacement needs agent hosting alongside synchronization and
 liveness. Podbot can reuse framing and accounting as a proxy; an embedding
@@ -33,52 +33,52 @@ design remain proposals; the vocabulary does not promise particular symbols.
 
 ### 2.1 Actors and identities
 
-| Term | Meaning |
-| --- | --- |
-| Host application | The embedding program. It owns execution placement, permission policy, persistence, and execution service for library tasks. |
-| ACP client | The protocol role that initializes a connection, creates or loads sessions, submits prompts, and services agent requests. A daemon can occupy this role. |
-| Agent | The ACP peer accepting prompts and emitting updates or reverse requests, distinct from its model provider and container. |
-| Proxy | An intermediary that forwards protocol bytes and may enforce declared policy. Reusing a codec does not make it a full ACP client. |
-| Transport | The supplied input/output channels and their declared closure semantics. Lifecycle status can use a separate channel. |
-| Connection generation | A connection instance and its correlation state. Replacement generations reject stale callback authority. |
-| ACP session | A conversation identity established through ACP. It is not inherently a process, workflow task, repository, or durable application record. |
-| Session generation | The local lifetime of a session route within a connection. Replacing that route fences its callbacks; the generation does not replace the opaque peer session ID. |
-| Operation | One locally tracked request and its outcome. Its local identity does not establish peer deduplication or permit replay. |
-| Turn | A prompt-oriented unit of agent work. Stable ACP session updates do not universally identify the originating turn. |
+| Term                  | Meaning                                                                                                                                                           |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Host application      | The embedding program. It owns execution placement, permission policy, persistence, and execution service for library tasks.                                      |
+| ACP client            | The protocol role that initializes a connection, creates or loads sessions, submits prompts, and services agent requests. A daemon can occupy this role.          |
+| Agent                 | The ACP peer accepting prompts and emitting updates or reverse requests, distinct from its model provider and container.                                          |
+| Proxy                 | An intermediary that forwards protocol bytes and may enforce declared policy. Reusing a codec does not make it a full ACP client.                                 |
+| Transport             | The supplied input/output channels and their declared closure semantics. Lifecycle status can use a separate channel.                                             |
+| Connection generation | A connection instance and its correlation state. Replacement generations reject stale callback authority.                                                         |
+| ACP session           | A conversation identity established through ACP. It is not inherently a process, workflow task, repository, or durable application record.                        |
+| Session generation    | The local lifetime of a session route within a connection. Replacing that route fences its callbacks; the generation does not replace the opaque peer session ID. |
+| Operation             | One locally tracked request and its outcome. Its local identity does not establish peer deduplication or permit replay.                                           |
+| Turn                  | A prompt-oriented unit of agent work. Stable ACP session updates do not universally identify the originating turn.                                                |
 
 *Table 1: Actors and identities that must remain distinct.*
 
 ### 2.2 Resources and ownership
 
-| Term | Meaning |
-| --- | --- |
-| Admission | The decision to accept work after reserving the resources required by its declared contract. Admission establishes no transport or execution result. |
-| Budget | A configured limit on an accounted resource, such as retained bytes, queued items, active requests, or admitted work. A count limit alone does not bound payload size. |
+| Term                | Meaning                                                                                                                                                                            |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Admission           | The decision to accept work after reserving the resources required by its declared contract. Admission establishes no transport or execution result.                               |
+| Budget              | A configured limit on an accounted resource, such as retained bytes, queued items, active requests, or admitted work. A count limit alone does not bound payload size.             |
 | Payload byte charge | Accounting for retained wire-buffer capacity and decoded string, byte-array, and extension-payload capacity. It differs from encoded frame length and excludes allocator metadata. |
-| Decoded node charge | Accounting for retained structural JSON elements, separately from payload bytes. Node count does not claim to measure their exact memory consumption. |
-| Resource owner | The component or lease retaining a charge until release or explicit ownership transfer. |
-| Event lease | A delivered event and its resource charge. Dequeueing alone does not release retained payloads. |
-| Backpressure | Restricting further admission or reading because downstream capacity is unavailable. Backpressure can prevent progress on an ordered stream and therefore needs a failure policy. |
-| Control reserve | Capacity retained for eligible responses and control work. It cannot bypass bytes already ordered ahead of a message or interrupt a partly written frame. |
-| Deadline | A configured limit on waiting or progress observation under documented execution conditions. Expiry records a local fact, not proof of remote termination. |
-| Accounted bound | A limit on resources within Magitek's stated ownership model. It is not a hard bound on process resident memory or total CPU service. |
+| Decoded node charge | Accounting for retained structural JSON elements, separately from payload bytes. Node count does not claim to measure their exact memory consumption.                              |
+| Resource owner      | The component or lease retaining a charge until release or explicit ownership transfer.                                                                                            |
+| Event lease         | A delivered event and its resource charge. Dequeueing alone does not release retained payloads.                                                                                    |
+| Backpressure        | Restricting further admission or reading because downstream capacity is unavailable. Backpressure can prevent progress on an ordered stream and therefore needs a failure policy.  |
+| Control reserve     | Capacity retained for eligible responses and control work. It cannot bypass bytes already ordered ahead of a message or interrupt a partly written frame.                          |
+| Deadline            | A configured limit on waiting or progress observation under documented execution conditions. Expiry records a local fact, not proof of remote termination.                         |
+| Accounted bound     | A limit on resources within Magitek's stated ownership model. It is not a hard bound on process resident memory or total CPU service.                                              |
 
 *Table 2: Capacity terms and the limits of their guarantees.*
 
 ### 2.3 Information, progress, and outcomes
 
-| Term | Meaning |
-| --- | --- |
-| Full-fidelity event | A typed event preserving supported content and extension metadata. Unsupported or oversized content produces an explicit result. |
-| Session event sequence | Local event order, distinct from agent turn identity. Persistence across restart requires host storage. |
-| Completion watermark | The required preceding event sequence associated with a peer result. It identifies the prefix that must reach the host before public completion. |
-| Delivery watermark | The highest contiguous event sequence actually yielded as an event lease to the host. Enqueueing alone does not advance it; delivery establishes no durability or peer convergence. |
-| Reverse request | An agent-to-client request, such as a permission, filesystem, or terminal request. The host supplies the authority and handler. |
-| Cancellation intent | A local request to stop work, distinct from sending an ACP cancellation notification or receiving a terminal prompt result. |
-| Interrupted outcome | The library lost the evidence needed to complete its normal protocol contract. The host may still have a running process. |
-| Unknown outcome | Evidence cannot establish execution or completion. The host must reconcile or obtain a decision before replay. |
-| Durability | Recovery of committed information after the relevant process or storage failure. The host defines this boundary; delivering an event does not establish it. |
-| Fail closed | End or reject an enforced operation when the library cannot uphold its contract. Resource exhaustion must not silently disable capability enforcement. |
+| Term                   | Meaning                                                                                                                                                                             |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full-fidelity event    | A typed event preserving supported content and extension metadata. Unsupported or oversized content produces an explicit result.                                                    |
+| Session event sequence | Local event order, distinct from agent turn identity. Persistence across restart requires host storage.                                                                             |
+| Completion watermark   | The required preceding event sequence associated with a peer result. It identifies the prefix that must reach the host before public completion.                                    |
+| Delivery watermark     | The highest contiguous event sequence actually yielded as an event lease to the host. Enqueueing alone does not advance it; delivery establishes no durability or peer convergence. |
+| Reverse request        | An agent-to-client request, such as a permission, filesystem, or terminal request. The host supplies the authority and handler.                                                     |
+| Cancellation intent    | A local request to stop work, distinct from sending an ACP cancellation notification or receiving a terminal prompt result.                                                         |
+| Interrupted outcome    | The library lost the evidence needed to complete its normal protocol contract. The host may still have a running process.                                                           |
+| Unknown outcome        | Evidence cannot establish execution or completion. The host must reconcile or obtain a decision before replay.                                                                      |
+| Durability             | Recovery of committed information after the relevant process or storage failure. The host defines this boundary; delivering an event does not establish it.                         |
+| Fail closed            | End or reject an enforced operation when the library cannot uphold its contract. Resource exhaustion must not silently disable capability enforcement.                              |
 
 *Table 3: Observable facts and conclusions that do not follow from them.*
 
@@ -107,19 +107,19 @@ The documentation uses three knowledge classes:
   must close it before dependent claims become valid.
 
 Proposals describe intended mechanisms; correctness remains open until
-qualification. Source inspection establishes code structure, not performance
-or complete interoperability.
+qualification. Source inspection establishes code structure, not performance or
+complete interoperability.
 
-| Evidence | Status and significance |
-| --- | --- |
-| Project commission, 2026-11-14 | Known requirements: shared native Rust client, bounded work, explicit outcomes, and separate host responsibilities. |
-| Official Rust ACP SDK at `05fd3893cca2f1be2eb3a262b0f7da2c52abaa58` | Known source baseline: SDK 5.3.0 and schema 1.18.0. Reuse remains the preferred qualification candidate, not an established implementation choice. |
-| Podbot at `c2c3b232730cea3ac8a88adde06d43c2e93cb309` | Known implementation: protocol proxy, several explicit buffers, initialization masking, runtime policy, and a bounded stdin-command queue. |
-| Podbot ADR 002 at the same commit | Known proposal: `HostedSession` separates protocol I/O from typed control events. Its status is Proposed; availability remains a downstream gate. |
+| Evidence                                                            | Status and significance                                                                                                                                                    |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Project commission, 2026-11-14                                      | Known requirements: shared native Rust client, bounded work, explicit outcomes, and separate host responsibilities.                                                        |
+| Official Rust ACP SDK at `05fd3893cca2f1be2eb3a262b0f7da2c52abaa58` | Known source baseline: SDK 5.3.0 and schema 1.18.0. Reuse remains the preferred qualification candidate, not an established implementation choice.                         |
+| Podbot at `c2c3b232730cea3ac8a88adde06d43c2e93cb309`                | Known implementation: protocol proxy, several explicit buffers, initialization masking, runtime policy, and a bounded stdin-command queue.                                 |
+| Podbot ADR 002 at the same commit                                   | Known proposal: `HostedSession` separates protocol I/O from typed control events. Its status is Proposed; availability remains a downstream gate.                          |
 | Podbot Kubernetes RFC at `fa0be50ae147acd53e1f374ba2971b1c1f67f0b9` | Known proposal in pull request 285: backend-neutral transport, initially unsupported reconnection, and later fenced supervision. It does not establish Kubernetes support. |
-| Lody at `d3179e1f7538b61d0a6acc6be0a324281be4e3c0` | Known baseline for the preceding daemon investigation. Its deployment on any particular machine remains unverified. |
-| Agentkit fork at `08355e7086a715be0a26b151d92f7c0812adda5d` | Known comparison candidate: SDK 3.6.0 with forked schema 1.14.0. A bounded transport surface alone does not qualify every high-level path. |
-| Mango at `7b6bd40917f3d7275cbf2145f2970290e67bb3a0` | Known comparison candidate: the inspected branch identifies 0.8.0; inspected published documentation concerns 0.7.1. Keep those baselines separate. |
+| Lody at `d3179e1f7538b61d0a6acc6be0a324281be4e3c0`                  | Known baseline for the preceding daemon investigation. Its deployment on any particular machine remains unverified.                                                        |
+| Agentkit fork at `08355e7086a715be0a26b151d92f7c0812adda5d`         | Known comparison candidate: SDK 3.6.0 with forked schema 1.14.0. A bounded transport surface alone does not qualify every high-level path.                                 |
+| Mango at `7b6bd40917f3d7275cbf2145f2970290e67bb3a0`                 | Known comparison candidate: the inspected branch identifies 0.8.0; inspected published documentation concerns 0.7.1. Keep those baselines separate.                        |
 
 *Table 4: Evidence ledger; all external observations are source inspections.*
 
@@ -143,11 +143,11 @@ control traffic behind data, even when internal queues reserve control
 capacity. An external callback can consume resources beyond the library's
 accounting unless the host supplies the agreed execution boundary.
 
-The technical design resolves these tensions as proposed contracts. The
-roadmap tests them before widening adoption. The first delivery gate requires
-one local ACP client; real Podbot and daemon integration follow. Kubernetes,
-distributed reconnection, and broader protocol profiles remain conditional.
-Ishiban's read-only observation milestone does not depend on Magitek.
+The technical design resolves these tensions as proposed contracts. The roadmap
+tests them before widening adoption. The first delivery gate requires one local
+ACP client; real Podbot and daemon integration follow. Kubernetes, distributed
+reconnection, and broader protocol profiles remain conditional. Ishiban's
+read-only observation milestone does not depend on Magitek.
 
 ## 5. Sources
 
