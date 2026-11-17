@@ -43,7 +43,9 @@ TEST_FLAGS ?= $(CARGO_FLAGS)
 # Selecting the runner must not provision anything: rustup installs a missing
 # pinned toolchain on demand, so the probe disables that, exactly as the
 # read-only capability checks do. Only the explicit installer targets install.
-TEST_CMD := $(if $(shell RUSTUP_AUTO_INSTALL=0 $(CARGO) nextest --version 2>/dev/null),nextest run,test)
+# The probe also prepends the build-tools bin directory, as the recipes do, so
+# a nextest installed only there is still found.
+TEST_CMD := $(if $(shell PATH="$(BUILD_TOOLS_PREFIX)/bin:$$PATH" RUSTUP_AUTO_INSTALL=0 $(CARGO) nextest --version 2>/dev/null),nextest run,test)
 # `cargo test` has no profiles. Under nextest, the `ui` profile carries the
 # serialized `nested-cargo` group and the longer compile-test timeout.
 UI_TEST_CMD := $(if $(filter nextest run,$(TEST_CMD)),$(TEST_CMD) --profile ui,$(TEST_CMD))
