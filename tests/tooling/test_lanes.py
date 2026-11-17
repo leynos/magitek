@@ -1,4 +1,10 @@
-"""Run real Cargo fixtures through ordinary, compile-time and timeout lanes."""
+"""Run real Cargo fixtures through the `make test`, `test-ui` and timeout lanes.
+
+The lanes differ in target selection, grouping and timeout policy, so the tests
+observe marker files that record which tests ran and under which nextest group.
+The crate and compile bound come from `lanes.py`, the fixture this module
+shares with `test_coverage_lanes.py`.
+"""
 
 import subprocess
 import time

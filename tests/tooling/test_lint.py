@@ -1,4 +1,10 @@
-"""Check that the public lint and formatting targets reject real defects."""
+"""Check that the public lint and formatting targets reject real defects.
+
+The `lint-yaml`, `lint-actions`, `lint-shell` and `markdownlint` targets are
+thin wrappers around third-party checkers, so each test supplies a defective
+input and a clean one. The tests also check that a missing tool fails loudly
+and that a Git error is not mistaken for an empty, passing selection.
+"""
 
 from support import CommandOptions, RepositoryTest
 

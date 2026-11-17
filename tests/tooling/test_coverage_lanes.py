@@ -1,4 +1,10 @@
-"""Exercise the coverage lane's target selection, flags and backend failures."""
+"""Check the `make coverage` lane through a real, disposable Cargo crate.
+
+Coverage must skip the compile-time UI targets, refuse the plain `cargo test`
+fallback and override the development Cranelift flags, because the instrumented
+build needs LLVM. The crate and its compile bound come from `lanes.py`, the
+fixture this module shares with `test_lanes.py`.
+"""
 
 from lanes import COMPILE_TIMEOUT, LaneFixture
 from support import CommandOptions

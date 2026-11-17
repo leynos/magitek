@@ -1,4 +1,12 @@
-"""Disposable repositories for public tooling integration tests."""
+"""Provide the disposable checkout and environment that tooling tests share.
+
+`RepositoryTest` copies the tracked repository into a temporary directory and
+runs the public Make targets and shell scripts there, so a test never changes
+the developer's tree. `child_environment` filters the environment handed to
+those child processes, which keeps hostile Git and build overrides from
+redirecting the fixture. Every other module under `tests/tooling/` builds on
+this one.
+"""
 
 import contextlib
 import os

@@ -1,4 +1,10 @@
-"""Exercise the coverage exclusion at the edges of a real checkout."""
+"""Check `scripts/exclude-ui-targets.sh` at the edges of a real checkout.
+
+The script edits `.config/nextest.toml` so the coverage lane skips compile-time
+UI targets without removing their sources. These tests cover the states it has
+to report or leave alone, and prove that a conflicting filter survives for
+diagnosis.
+"""
 
 from support import CommandOptions, RepositoryTest
 

@@ -1,4 +1,11 @@
-"""Exercise the installer's success, component and failure paths."""
+"""Check the success and failure paths of `scripts/install-build-tools.sh`.
+
+The script backs `make install-build-tools`. A locally served, checksummed
+archive and fake `curl`, `uname` and `rustup` commands keep the test off the
+network and away from the host toolchain, while the assertions still cover the
+installed layout, the Cranelift repair diagnostic and the missing-`rustup`
+diagnostic.
+"""
 
 import hashlib
 import io

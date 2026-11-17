@@ -1,4 +1,11 @@
-"""Probe the shared pin readers with well-formed and malformed pins."""
+"""Probe the pin readers in `scripts/build-tools-common.sh`.
+
+The installer and the checker share that library, so its `read_pin`,
+`pinned_toolchain_components` and `mold_arch` readers decide which toolchain
+and linker every Make target expects. These tests feed them well-formed pins
+and malformed ones, including multi-line and separator-bearing values, and
+assert the exact outputs.
+"""
 
 from support import CommandOptions, RepositoryTest
 

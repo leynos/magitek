@@ -1,4 +1,10 @@
-"""Verify fixture children cannot inherit settings that redirect the repository."""
+"""Verify `child_environment` blocks settings that would redirect a fixture.
+
+`support.py` filters the environment handed to every child process so hostile
+Git or build overrides cannot reach the disposable repository. These tests
+prove the filter drops those variables, and that an unfiltered environment
+still reaches the caller, so the filter is neither inert nor over-broad.
+"""
 
 import hashlib
 import os

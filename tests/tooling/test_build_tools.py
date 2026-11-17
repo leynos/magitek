@@ -1,4 +1,12 @@
-"""Probe fake capabilities without modifying the host toolchain or linker."""
+"""Check the read-only preflight in `scripts/check-build-tools.sh`.
+
+The script backs the `check-build-tools`, `check-rust-toolchain` and
+`check-coverage-tools` targets that the other Make targets depend on. These
+tests run it against fake `rustup`, toolchain and linker commands, so a missing
+capability must fail with a diagnostic and no host mutation.
+`scripts/install-build-tools.sh` is its installing counterpart and is covered
+in `test_installer.py`.
+"""
 
 import shutil
 
