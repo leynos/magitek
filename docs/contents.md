@@ -25,6 +25,39 @@
 - [Resource-policy example](contracts/resource-policy.example.json) – an
   illustrative profile for design validation; values are not release defaults.
 
-The technical design's section 5 defines the cross-field constraints that
-JSON Schema cannot express. The repository currently contains a draft
-documentation set, with implementation and runtime qualification still ahead.
+## Project guidance
+
+- [Developer guide](developers-guide.md) – local commands, prerequisites, CI,
+  test lanes, compiler configuration, and administration.
+- [Repository layout](repository-layout.md) – files and ownership boundaries.
+- [Baseline provenance](baseline-provenance.md) – exact import sources and
+  adaptations for Magitek.
+- [Import execution plan](execplans/import-rust-template-repo-baseline.md) –
+  approved scope, implementation progress, and acceptance evidence.
+- [Documentation style](documentation-style-guide.md) – writing, Markdown,
+  architectural decisions, and roadmap conventions.
+- [Polonius policy](polonius.md) – pinned compiler and borrow-centric API
+  design.
+
+## Rust reference guides
+
+These guides are development references. Their presence does not add runtime or
+testing dependencies to Cargo.toml.
+
+- [OrthoConfig v0.10.0](ortho-config-users-guide.md) – layered configuration for
+  hosts; Magitek does not own configuration loading.
+- [rstest-bdd v0.6.0](rstest-bdd-users-guide.md) – behaviour-driven testing.
+- [Dependency injection](reliable-testing-in-rust-via-dependency-injection.md) –
+  deterministic tests at external boundaries.
+- [Rust doctest guide](rust-doctest-dry-guide.md) – maintainable executable
+  documentation examples.
+- [rstest fixtures](rust-testing-with-rstest-fixtures.md) – reusable and
+  parameterized test setup.
+- [Complexity and refactoring](complexity-antipatterns-and-refactoring-strategies.md)
+  – maintainable code structure.
+- [Scripting standards](scripting-standards.md) – helper-script conventions.
+
+The technical design's section 5 defines the cross-field constraints that JSON
+Schema cannot express. The repository contains a draft documentation set and a
+dependency-free Rust tooling baseline; implementation and runtime qualification
+are still ahead.

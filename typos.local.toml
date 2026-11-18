@@ -1,0 +1,23 @@
+# Repository-specific identifiers, quotations and deliberate fixtures.
+
+schema = 1
+
+[oxford]
+stems = []
+
+[words]
+accepted = []
+
+[words.corrections]
+
+[patterns]
+ignore = [
+  # Exact compiler-analysis proper name, without accepting a prose spelling.
+  '\bPolonius\b',
+  # The linker's own name, which the en-GB dictionary reads as a misspelling
+  # of "mould". Accept only the code-formatted identifier.
+  '`mold`',
+]
+
+[files]
+exclude = []

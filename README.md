@@ -8,22 +8,25 @@ ordered event delivery, deadlines, and explicit failure outcomes. Reusable
 framing and accounting primitives form a separate layer for other protocol
 roles, including Podbot's proxy.
 
-**Status: design proposal.** This repository contains project documentation.
-There is no Rust implementation to install or run. Dependency selection, the
-public API, and release packaging remain open qualification decisions.
+**Status: tooling baseline.** This repository contains the project
+documentation and a dependency-free Rust library scaffold with formatting,
+lint, test, coverage, and CI entry points. The ACP protocol, host API, and
+runtime are not implemented, so there is no protocol behaviour to install or
+run. Dependency selection, the public API, and release packaging remain open
+qualification decisions.
 
 ______________________________________________________________________
 
 ## Why Magitek?
 
-An async API says when work can wait. It doesn't say how much work may wait.
-A bounded channel also provides little protection when the next component
-accepts everything into an unbounded queue.
+An async API says when work can wait. It doesn't say how much work may wait. A
+bounded channel also provides little protection when the next component accepts
+everything into an unbounded queue.
 
 The proposed contract follows retained work across those boundaries. It counts
 frames, bytes, outstanding requests, callbacks, and waiting producers, and
-defines what happens when each budget runs out. A slow consumer must produce
-an observable overload outcome without accumulating unlimited work or silently
+defines what happens when each budget runs out. A slow consumer must produce an
+observable overload outcome without accumulating unlimited work or silently
 discarding transcript updates.
 
 The initial consumers have different responsibilities. The planned Rust Lody
@@ -88,15 +91,15 @@ ______________________________________________________________________
 Magitek's proposed client owns ACP interaction within one connection. Its host
 owns the environment and the consequences of agent work.
 
-| Responsibility | Proposed owner |
-| --- | --- |
-| ACP negotiation, correlation, event order, and admission | Magitek client |
-| Framing and resource-reservation primitives | Reusable Magitek layer |
-| Proxy inspection, authorization, and forwarding policy | Podbot |
-| Process launch, placement, termination, and restart | Host |
-| Filesystem authority and permission decisions | Host |
-| Command journals, durable history, Loro sync, and recovery | Host |
-| Ishiban work-item identity and workflow state | Ishiban and its adapters |
+| Responsibility                                             | Proposed owner           |
+| ---------------------------------------------------------- | ------------------------ |
+| ACP negotiation, correlation, event order, and admission   | Magitek client           |
+| Framing and resource-reservation primitives                | Reusable Magitek layer   |
+| Proxy inspection, authorization, and forwarding policy     | Podbot                   |
+| Process launch, placement, termination, and restart        | Host                     |
+| Filesystem authority and permission decisions              | Host                     |
+| Command journals, durable history, Loro sync, and recovery | Host                     |
+| Ishiban work-item identity and workflow state              | Ishiban and its adapters |
 
 _Table 1: Proposed responsibility boundaries._
 
@@ -107,9 +110,27 @@ establish equivalent lifecycle or recovery guarantees.
 
 ______________________________________________________________________
 
+## Develop
+
+The library scaffold carries the shared build spine. Install the pinned
+toolchain and linkers, then run the checks:
+
+```sh
+make install-build-tools
+make all typecheck
+```
+
+`make all` covers formatting, lint, tests, tooling integration, shared workflow
+contracts, and spelling; `make typecheck` adds the compiler check.
+`make coverage` writes an LCOV report. The [developer guide][developers] lists
+prerequisites, test lanes, coverage commands, and CI administration.
+
+______________________________________________________________________
+
 ## Learn more
 
 - [Documentation contents][contents] – the complete documentation index.
+- [Developer guide][developers] – local commands, test lanes, and CI.
 - [Terms of reference][terms] – purpose, stakeholders, scope, and constraints.
 - [Context][context] – source evidence, integration needs, and alternatives.
 - [Design][design] – proposed architecture and operational contracts.
@@ -136,6 +157,7 @@ versions and reproducible traces when reporting compatibility findings.
 
 [acp]: https://agentclientprotocol.com/
 [contents]: docs/contents.md
+[developers]: docs/developers-guide.md
 [terms]: docs/terms-of-reference.md
 [context]: docs/context.md
 [design]: docs/magitek-design.md

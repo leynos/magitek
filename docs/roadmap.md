@@ -3,15 +3,17 @@
 This roadmap implements goals G1–G6 in the
 [terms of reference](terms-of-reference.md) through the proposed
 [technical design](magitek-design.md). The
-[context and evidence ledger](context.md) distinguishes inspected behaviour from
-unverified assumptions. All tasks remain proposed; neither an unchecked task nor
-a cited dependency establishes an implemented capability.
+[context and evidence ledger](context.md) distinguishes inspected behaviour
+from unverified assumptions. Every task without a checked box remains proposed;
+neither an unchecked task nor a cited dependency establishes an implemented
+capability.
 
-Goals, Ideas, Steps, and Tasks (GIST) organize the delivery sequence. Each phase
-states a falsifiable idea, each step answers a delivery question, and each task
-defines a review-sized execution unit. The roadmap makes no date commitments.
-Unit, behavioural, and property checks accompany the implementation they verify;
-dedicated end-to-end (E2E) tasks cover interactions that exceed one component.
+Goals, Ideas, Steps, and Tasks (GIST) organize the delivery sequence. Each
+phase states a falsifiable idea, each step answers a delivery question, and
+each task defines a review-sized execution unit. The roadmap makes no date
+commitments. Unit, behavioural, and property checks accompany the
+implementation they verify; dedicated end-to-end (E2E) tasks cover interactions
+that exceed one component.
 
 The first release targets a bounded native client for stable Agent Client
 Protocol (ACP) v1. Phase 4 qualifies actual host adoption; phase 5 contains
@@ -27,9 +29,9 @@ identify a viable bounded implementation before either host depends on its
 public interface. The idea fails if every candidate requires hidden unbounded
 work or unsupported protocol changes to complete the minimum exchange.
 
-This phase establishes the build, fixtures, and decision evidence needed for the
-first client. It does not declare an engine production-ready or treat source
-inspection as a runtime result.
+This phase establishes the build, fixtures, and decision evidence needed for
+the first client. It does not declare an engine production-ready or treat
+source inspection as a runtime result.
 
 ### 1.1. Make the proposed operating contract executable
 
@@ -37,12 +39,21 @@ Can one crate express the resource and failure contracts without acquiring host
 responsibilities? The answer determines the interfaces exercised by the engine
 qualification. See [magitek-design.md](magitek-design.md) §§1–5 and §10.
 
-- [ ] 1.1.1. Establish the single-crate build and continuous integration spine.
+- [x] 1.1.1. Establish the single-crate build and continuous integration spine.
   - Requires no earlier task.
   - See [magitek-design.md](magitek-design.md) §§4, 10, and 13.
   - Success: the supported native build, formatting, lint, and fixture checks
     run through documented commands; core dependencies exclude configuration
     loaders, storage engines, authentication clients, and container runtimes.
+  - Evidence: the
+    [baseline import](execplans/import-rust-template-repo-baseline.md) supplies
+    the documented commands, and the crate declares no dependencies. Hosted
+    `CI` runs the `make check-fmt`, `make nixie`, `make
+    test-workflow-contracts`, `make spelling`, `make test-tooling`, `make
+    audit`, `make lint`, `make test`, and `make test-ui` targets; its Markdown
+    lint and coverage steps are separate workflow actions rather than Make
+    targets. The `make build`, `make release`, `make typecheck`, `make
+    markdownlint`, and `make coverage` targets were verified locally.
 - [ ] 1.1.2. Implement immutable resource-policy validation.
   - Requires 1.1.1.
   - See [magitek-design.md](magitek-design.md) §5 and the
@@ -104,8 +115,8 @@ surface, and conditions that would force reconsideration. See
 
 Idea: a native consumer can initialize one real ACP agent, submit one prompt,
 and receive its ordered output through a bounded library-owned path. The idea
-fails if a slow reader, large frame, or hidden engine queue defeats the declared
-resource contract.
+fails if a slow reader, large frame, or hidden engine queue defeats the
+declared resource contract.
 
 The first client uses supplied protocol streams and a host-owned runtime. It
 advertises only implemented capabilities, and it can reject unsupported host
@@ -114,8 +125,8 @@ services while completing ordinary prompt exchanges.
 ### 2.1. Retain resource charges until ownership actually changes
 
 Can admission account for queued, active, and consumer-held work without
-creating unbounded waiting tasks? This step establishes the ownership rules used
-by every later transport and callback. See
+creating unbounded waiting tasks? This step establishes the ownership rules
+used by every later transport and callback. See
 [magitek-design.md](magitek-design.md) §5.
 
 - [ ] 2.1.1. Implement the resource ledger and charged event leases.
@@ -199,8 +210,8 @@ for the local consumer. See [magitek-design.md](magitek-design.md) §§4–7 and
 ### 2.4. Complete a local prompt with honest event ordering
 
 Can a native consumer observe all preceding session output before consuming its
-completion watermark? This step supplies the first usable client and establishes
-the distinction between delivery and persistence. See
+completion watermark? This step supplies the first usable client and
+establishes the distinction between delivery and persistence. See
 [magitek-design.md](magitek-design.md) §§7–10 and 12.
 
 - [ ] 2.4.1. Implement stable ACP v1 initialization, session creation, and
@@ -254,9 +265,9 @@ before adopting the client for consequential agent work.
 
 ### 3.1. Serve agent requests through explicit bounded capabilities
 
-Can host services remain responsive without performing host work on the protocol
-driver? The result informs capability advertisement and the host integration
-surface. See [magitek-design.md](magitek-design.md) §§4, 8, and 10.
+Can host services remain responsive without performing host work on the
+protocol driver? The result informs capability advertisement and the host
+integration surface. See [magitek-design.md](magitek-design.md) §§4, 8, and 10.
 
 - [ ] 3.1.1. Implement the bounded host-service request dispatcher.
   - Requires 2.1.2 and 2.3.3.
@@ -295,9 +306,9 @@ surface. See [magitek-design.md](magitek-design.md) §§4, 8, and 10.
 ### 3.2. Preserve uncertainty through cancellation and replacement
 
 Can a caller stop waiting, request cancellation, or replace transport without
-inventing evidence that work stopped? This step defines safe recovery inputs for
-host-owned journals and supervisors. See [magitek-design.md](magitek-design.md)
-§§8–10.
+inventing evidence that work stopped? This step defines safe recovery inputs
+for host-owned journals and supervisors. See
+[magitek-design.md](magitek-design.md) §§8–10.
 
 - [ ] 3.2.1. Implement request cancellation and prompt cancellation separately.
   - Requires 2.2.3, 2.3.2, and 2.4.2.
@@ -352,8 +363,8 @@ fails if either integration needs unbounded side queues, a duplicated ACP
 engine, or a claim stronger than the library's actual delivery evidence.
 
 This phase requires real integration evidence before release. A mock stream
-adapter can develop the seam but cannot satisfy Podbot adoption. The native Lody
-host and Podbot's usable stream interface are external dependencies; their
+adapter can develop the seam but cannot satisfy Podbot adoption. The native
+Lody host and Podbot's usable stream interface are external dependencies; their
 availability must be recorded, not assumed from a design proposal.
 
 ### 4.1. Reuse framing and accounting in an enforced Podbot proxy
@@ -445,8 +456,8 @@ profile and expose host scheduling assumptions. See
 
 ### 4.4. Release a contract that consumers can reproduce
 
-Can a consumer reproduce the qualified profile and understand its limits without
-reading engine internals? This step makes compatibility, migration, and
+Can a consumer reproduce the qualified profile and understand its limits
+without reading engine internals? This step makes compatibility, migration, and
 operating evidence part of the release decision. See
 [magitek-design.md](magitek-design.md) §§11–13.
 
@@ -514,8 +525,8 @@ or needs a separately reviewed protocol profile. See
 
 Can a requested protocol revision preserve the published resource and evidence
 contracts? The answer determines versioned API boundaries rather than silently
-changing the stable ACP v1 profile. See
-[magitek-design.md](magitek-design.md) §§3 and 13.
+changing the stable ACP v1 profile. See [magitek-design.md](magitek-design.md)
+§§3 and 13.
 
 - [ ] 5.2.1. Prototype a demanded ACP revision against the conformance harness.
   - Requires 4.4.4.
@@ -528,8 +539,8 @@ changing the stable ACP v1 profile. See
 ### 5.3. Change packaging only when consumer evidence requires it
 
 Would separating reusable primitives reduce measured integration cost without
-splitting the operating contract? This step keeps packaging responsive to actual
-adoption. See [magitek-design.md](magitek-design.md) §§4, 10, and 13.
+splitting the operating contract? This step keeps packaging responsive to
+actual adoption. See [magitek-design.md](magitek-design.md) §§4, 10, and 13.
 
 - [ ] 5.3.1. Qualify a consumer-driven package or feature split.
   - Requires 4.4.4.

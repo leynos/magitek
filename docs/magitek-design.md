@@ -12,8 +12,8 @@ The terms of reference define the problem and goals. `context.md` defines
 domain vocabulary. This design defines proposed behaviour. The
 [resource-policy schema](contracts/resource-policy.schema.json) defines the
 policy data shape; section 5 defines its additional semantic constraints.
-Examples illustrate that contract and do not establish production defaults.
-An inconsistency among these documents blocks acceptance of the design.
+Examples illustrate that contract and do not establish production defaults. An
+inconsistency among these documents blocks acceptance of the design.
 
 ## Contents
 
@@ -34,12 +34,12 @@ An inconsistency among these documents blocks acceptance of the design.
 
 ## 1. Decision summary
 
-Long-lived agent hosts need predictable resource ownership and truthful
-failure outcomes when an agent, application callback, or output consumer stops
-making progress. Magitek centralizes that contract for the Rust Lody
-replacement and hosts that use Podbot. The library limits its own work and
-payload retention; the embedding application controls execution resources,
-permissions, persistence, and recovery.
+Long-lived agent hosts need predictable resource ownership and truthful failure
+outcomes when an agent, application callback, or output consumer stops making
+progress. Magitek centralizes that contract for the Rust Lody replacement and
+hosts that use Podbot. The library limits its own work and payload retention;
+the embedding application controls execution resources, permissions,
+persistence, and recovery.
 
 The proposed first implementation has these boundaries:
 
@@ -71,25 +71,25 @@ limits and daemon liveness scheduling belong to the host.
 The goals below use the identifiers in the terms of reference. An acceptance
 record must identify the exact implementation, profile, and host conditions.
 
-| Goal | Design obligation | Principal sections |
-| --- | --- | --- |
-| G1 | Account for retained payloads, work, and admission waiters. | 5, 6, 12 |
-| G2 | Keep protocol progress independent of slow business work, with explicit failure when bounded progress ends. | 4, 6, 7, 11, 12 |
-| G3 | Preserve typed session events and order completion after preceding relevant updates. | 7, 8, 10, 12 |
-| G4 | Expose delivery uncertainty and distinct cancellation evidence. | 8, 9, 10, 12 |
-| G5 | Reuse the client across execution hosts while preserving proxy and policy boundaries. | 2, 4, 10, 13 |
-| G6 | Make guarantees auditable through diagnostics and reproducible qualification. | 3, 11, 12, 13 |
+| Goal | Design obligation                                                                                           | Principal sections |
+| ---- | ----------------------------------------------------------------------------------------------------------- | ------------------ |
+| G1   | Account for retained payloads, work, and admission waiters.                                                 | 5, 6, 12           |
+| G2   | Keep protocol progress independent of slow business work, with explicit failure when bounded progress ends. | 4, 6, 7, 11, 12    |
+| G3   | Preserve typed session events and order completion after preceding relevant updates.                        | 7, 8, 10, 12       |
+| G4   | Expose delivery uncertainty and distinct cancellation evidence.                                             | 8, 9, 10, 12       |
+| G5   | Reuse the client across execution hosts while preserving proxy and policy boundaries.                       | 2, 4, 10, 13       |
+| G6   | Make guarantees auditable through diagnostics and reproducible qualification.                               | 3, 11, 12, 13      |
 
 _Table 1: Terms-of-reference goals mapped to technical obligations._
 
 ### 2.2. Ownership and exclusions
 
-| Owner | Responsibilities | Boundary supplied to Magitek |
-| --- | --- | --- |
-| Host application | Work selection, authorization decisions, configuration loading, persistence, and recovery. | Validated policy, host services, event consumer, and runtime service. |
-| Execution adapter | Process or container creation, workspace, credentials, diagnostics capture, and lifecycle actions. | Byte streams and separately observed lifecycle state. |
-| Magitek | ACP negotiation, correlation, admitted dispatch, ordered delivery, budgets, and protocol termination. | Typed client handles, charged events, and failure evidence. |
-| Peer agent | Its own execution and protocol compliance. | ACP messages and independently observable process behaviour. |
+| Owner             | Responsibilities                                                                                      | Boundary supplied to Magitek                                          |
+| ----------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Host application  | Work selection, authorization decisions, configuration loading, persistence, and recovery.            | Validated policy, host services, event consumer, and runtime service. |
+| Execution adapter | Process or container creation, workspace, credentials, diagnostics capture, and lifecycle actions.    | Byte streams and separately observed lifecycle state.                 |
+| Magitek           | ACP negotiation, correlation, admitted dispatch, ordered delivery, budgets, and protocol termination. | Typed client handles, charged events, and failure evidence.           |
+| Peer agent        | Its own execution and protocol compliance.                                                            | ACP messages and independently observable process behaviour.          |
 
 _Table 2: Responsibility boundaries for an embedded connection._
 
@@ -101,8 +101,8 @@ environment variables for authority.
 
 Provider catalogues, workflow scheduling, durable command journals, transcript
 storage, and arbitrary process reattachment remain host responsibilities.
-Podbot retains its sandbox enforcement and execution role. The initial
-library does not offer a command-line application or an installation workflow.
+Podbot retains its sandbox enforcement and execution role. The initial library
+does not offer a command-line application or an installation workflow.
 
 ### 2.3. Trust and capability boundaries
 
@@ -112,37 +112,37 @@ required. Host callbacks are trusted policy implementations, but may fail,
 block, or allocate outside Magitek's accounting.
 
 Advertise a client capability only when the host has installed an appropriate
-service and its policy permits that service. Recheck authority on each
-request. Possessing a schema type or receiving a file path grants no access.
-Filesystem containment, symlink handling, environment policy, and terminal
-execution location remain obligations of the selected host service.
+service and its policy permits that service. Recheck authority on each request.
+Possessing a schema type or receiving a file path grants no access. Filesystem
+containment, symlink handling, environment policy, and terminal execution
+location remain obligations of the selected host service.
 
 Protocol authentication uses methods the peer advertises. Magitek may carry
 typed authentication exchanges through a host-provided broker, but does not
-discover credentials, launch a login browser, or substitute a cloud OAuth
-flow. Permission approval and authentication remain separate concepts.
+discover credentials, launch a login browser, or substitute a cloud OAuth flow.
+Permission approval and authentication remain separate concepts.
 
 ## 3. Evidence and implementation foundation
 
 ### 3.1. Inspected baseline
 
-The source investigation on 14 November 2026 found these constraints. These
-are source observations, not Magitek benchmark results. The context document
+The source investigation on 14 November 2026 found these constraints. These are
+source observations, not Magitek benchmark results. The context document
 records the source pins and evidence categories.
 
-| Candidate or consumer | Observed evidence | Consequence for qualification |
-| --- | --- | --- |
-| Official ACP SDK 5.3.0 | Its connection and session paths use unbounded channels, and its byte adapter reads complete lines without a configured line limit.[^1] | Audit all producers, internal handoffs, task admission, and subscriptions. A bounded wrapper alone is insufficient. |
-| Agentkit SDK 3.6.0 | Provides frame charges and explicit admission limits. Its ordinary transport and high-level session paths retain legacy or unbounded interfaces.[^2] | Qualify the complete selected path and reconcile its earlier SDK/schema family with the required protocol surface. |
-| Mango ACP harness | The inspected main branch uses official schema types with its own bounded JSON-RPC peer and host process ports. Its harness deliberately normalizes and filters some session data.[^3] | Evaluate the lower-level peer separately from the normalized harness; preserve full-fidelity delivery requirements. |
-| Podbot | A bounded stdin command queue exists, while diagnostics and protocol output share a drain loop. Oversized unterminated ACP output triggers raw forwarding in the inspected assembler.[^4] | Carry shared stall, fragmentation, and enforcement invariants into proxy adoption. |
+| Candidate or consumer  | Observed evidence                                                                                                                                                                         | Consequence for qualification                                                                                       |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Official ACP SDK 5.3.0 | Its connection and session paths use unbounded channels, and its byte adapter reads complete lines without a configured line limit.[^1]                                                   | Audit all producers, internal handoffs, task admission, and subscriptions. A bounded wrapper alone is insufficient. |
+| Agentkit SDK 3.6.0     | Provides frame charges and explicit admission limits. Its ordinary transport and high-level session paths retain legacy or unbounded interfaces.[^2]                                      | Qualify the complete selected path and reconcile its earlier SDK/schema family with the required protocol surface.  |
+| Mango ACP harness      | The inspected main branch uses official schema types with its own bounded JSON-RPC peer and host process ports. Its harness deliberately normalizes and filters some session data.[^3]    | Evaluate the lower-level peer separately from the normalized harness; preserve full-fidelity delivery requirements. |
+| Podbot                 | A bounded stdin command queue exists, while diagnostics and protocol output share a drain loop. Oversized unterminated ACP output triggers raw forwarding in the inspected assembler.[^4] | Carry shared stall, fragmentation, and enforcement invariants into proxy adoption.                                  |
 
 _Table 3: Source evidence that constrains the implementation choice._
 
-An internal unbounded channel can sit inside a bounded system if every
-producer requires admission and charges survive every handoff. The audit must
-prove those conditions or identify the escape. Searching for channel type
-names alone does not establish the guarantee.
+An internal unbounded channel can sit inside a bounded system if every producer
+requires admission and charges survive every handoff. The audit must prove
+those conditions or identify the escape. Searching for channel type names alone
+does not establish the guarantee.
 
 Agentkit's inspected fork uses its own schema 1.14.0, whereas the inspected
 upstream SDK uses schema 1.18.0. This identifies a Rust dependency and feature
@@ -158,12 +158,12 @@ a producer-to-consumer ownership map. The record must cover physical framing,
 decoding, protocol dispatch, pending replies, dynamic handlers, session
 subscriptions, outgoing serialization, and physical writes.
 
-| Option | Prefer when | Reject or defer when |
-| --- | --- | --- |
-| Official SDK with qualified bounded integration | All retained paths can satisfy the contract with a maintainable change set. | Hidden queues or escaped handles prevent admission enforcement. |
-| Agentkit-based integration | Its charged paths and compatible adapters pass the complete client tests at an acceptable maintenance cost. | Version lag or unqualified session paths require a larger divergence than the upstream option. |
-| Reuse Mango's lower-level peer | Its peer can expose the required ACP surface without harness filtering or unwanted host ownership. | Required fidelity, host callbacks, or dependency constraints do not fit. |
-| New narrow dispatcher using official schema types | The preceding options fail documented must-pass criteria, and maintainers accept the maintenance cost. | The proposal merely duplicates an existing qualified path. |
+| Option                                            | Prefer when                                                                                                 | Reject or defer when                                                                           |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Official SDK with qualified bounded integration   | All retained paths can satisfy the contract with a maintainable change set.                                 | Hidden queues or escaped handles prevent admission enforcement.                                |
+| Agentkit-based integration                        | Its charged paths and compatible adapters pass the complete client tests at an acceptable maintenance cost. | Version lag or unqualified session paths require a larger divergence than the upstream option. |
+| Reuse Mango's lower-level peer                    | Its peer can expose the required ACP surface without harness filtering or unwanted host ownership.          | Required fidelity, host callbacks, or dependency constraints do not fit.                       |
+| New narrow dispatcher using official schema types | The preceding options fail documented must-pass criteria, and maintainers accept the maintenance cost.      | The proposal merely duplicates an existing qualified path.                                     |
 
 _Table 4: Foundation choices and their decision criteria._
 
@@ -196,20 +196,20 @@ _Figure 1: Execution ownership and ACP traffic follow separate paths._
 
 Start with one crate and internal modules for transport, admission, client
 state, events, and diagnostics. Place an optional local-process adapter behind
-an explicit feature. Keep a Podbot adapter in integration code until its
-shared contract stabilizes. The core must not depend on Podbot, and Podbot
-must not depend on a Magitek adapter that creates a dependency cycle.
+an explicit feature. Keep a Podbot adapter in integration code until its shared
+contract stabilizes. The core must not depend on Podbot, and Podbot must not
+depend on a Magitek adapter that creates a dependency cycle.
 
 ### 4.2. Execution domains
 
-| Domain | Allowed work | Progress obligation |
-| --- | --- | --- |
-| Frame reader | Incremental bounded framing and admitted decoder submission. | Poll transport and observe cancellation without waiting on application work. |
-| Decoder work | Size-bounded parsing and schema conversion under CPU-job admission. | Retain all charges; preserve ingress order when results return. |
-| Protocol dispatcher | Correlation, state transitions, capability checks, and admitted handoff. | Perform short bounded work per poll; never await later traffic from the same connection. |
-| Frame writer | One serialization/write owner, with bounded control admission. | Retain charges until completion or failure and enforce write deadlines. |
-| Host-service workers | Permission, filesystem, and terminal service calls. | Respect admission, response obligations, generation checks, and cancellation. |
-| Event consumer | Host projection, persistence, and presentation. | Release or transfer leases; accept explicit pressure if it falls behind. |
+| Domain               | Allowed work                                                             | Progress obligation                                                                      |
+| -------------------- | ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
+| Frame reader         | Incremental bounded framing and admitted decoder submission.             | Poll transport and observe cancellation without waiting on application work.             |
+| Decoder work         | Size-bounded parsing and schema conversion under CPU-job admission.      | Retain all charges; preserve ingress order when results return.                          |
+| Protocol dispatcher  | Correlation, state transitions, capability checks, and admitted handoff. | Perform short bounded work per poll; never await later traffic from the same connection. |
+| Frame writer         | One serialization/write owner, with bounded control admission.           | Retain charges until completion or failure and enforce write deadlines.                  |
+| Host-service workers | Permission, filesystem, and terminal service calls.                      | Respect admission, response obligations, generation checks, and cancellation.            |
+| Event consumer       | Host projection, persistence, and presentation.                          | Release or transfer leases; accept explicit pressure if it falls behind.                 |
 
 _Table 5: Work placement and progress obligations._
 
@@ -223,14 +223,14 @@ The qualified implementation must specify the synchronous parsing envelope.
 Larger or less predictable decode work uses an admitted worker boundary with
 bounded queued and running jobs. Preserve source order through a bounded
 reorder buffer or a serial per-connection decoder. A worker timeout does not
-reclaim a still-running computation: charges remain until it actually ends,
-and close can report outstanding cleanup. The `processing` deadline covers
-decoder queue residence and execution from CPU-work admission.
+reclaim a still-running computation: charges remain until it actually ends, and
+close can report outstanding cleanup. The `processing` deadline covers decoder
+queue residence and execution from CPU-work admission.
 
 CPU service remains a host precondition. An async timeout cannot run while its
-executor has no service, and it cannot pre-empt arbitrary blocking code.
-Lody's heartbeat scheduler therefore stays in the daemon's separate liveness
-domain. Magitek reports its own backlog and progress to that supervisor.
+executor has no service, and it cannot pre-empt arbitrary blocking code. Lody's
+heartbeat scheduler therefore stays in the daemon's separate liveness domain.
+Magitek reports its own backlog and progress to that supervisor.
 
 ## 5. Resource admission and accounting
 
@@ -238,23 +238,23 @@ domain. Magitek reports its own backlog and progress to that supervisor.
 
 The [policy schema](contracts/resource-policy.schema.json) and
 [illustrative profile](contracts/resource-policy.example.json) define a
-reviewable configuration shape, not a public serialization API commitment.
-All counts, byte limits, and millisecond deadlines are finite positive
-integers. Zero, negative values, and unlimited sentinels are invalid.
+reviewable configuration shape, not a public serialization API commitment. All
+counts, byte limits, and millisecond deadlines are finite positive integers.
+Zero, negative values, and unlimited sentinels are invalid.
 
-| Policy group | Meaning |
-| --- | --- |
-| `connection` | Caps live sessions, active prompts, outgoing requests, incoming requests, handler jobs, CPU jobs, waiting calls, and routes. |
-| `frame` | Caps encoded inbound/outbound frames, JSON nesting, JSON nodes, and identifiers. |
-| `buffers` | Caps retained owned payload bytes and decoded nodes, with item/byte ceilings for ingress, egress, and event stages. |
-| `reserve` | Protects control egress and terminal-event capacity inside the enclosing budgets. |
+| Policy group   | Meaning                                                                                                                                                                                               |
+| -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `connection`   | Caps live sessions, active prompts, outgoing requests, incoming requests, handler jobs, CPU jobs, waiting calls, and routes.                                                                          |
+| `frame`        | Caps encoded inbound/outbound frames, JSON nesting, JSON nodes, and identifiers.                                                                                                                      |
+| `buffers`      | Caps retained owned payload bytes and decoded nodes, with item/byte ceilings for ingress, egress, and event stages.                                                                                   |
+| `reserve`      | Protects control egress and terminal-event capacity inside the enclosing budgets.                                                                                                                     |
 | `deadlines_ms` | Bounds admission waits, initialization, ordinary request/response exchanges, partial-frame assembly, decode processing, writes, service work, permission waits, drain, cancellation grace, and close. |
-| `global` | Caps admitted connection generations, including retained closed generations, payload bytes, handler/CPU jobs, and waiting calls across a host budget. |
+| `global`       | Caps admitted connection generations, including retained closed generations, payload bytes, handler/CPU jobs, and waiting calls across a host budget.                                                 |
 
 _Table 6: Resource policy groups and their units._
 
-Encoded frame sizes exclude the line delimiter. The framer separately allows
-at most the selected delimiter's two bytes. An owned payload charge counts
+Encoded frame sizes exclude the line delimiter. The framer separately allows at
+most the selected delimiter's two bytes. An owned payload charge counts
 retained wire buffer capacity and retained decoded string, byte-array, and
 extension payload capacity. Decoded node counts and fixed object/task counts
 bound structural populations separately. This ledger does not measure Rust
@@ -267,16 +267,16 @@ bounded storage it authorizes. A decoder must reserve a conservative envelope
 before materialization, or use a budget-aware visitor; parsing an unrestricted
 object tree and checking its size afterwards does not satisfy the contract.
 
-Every field must map to an implementation enforcement point and a metric.
-The selected foundation's qualification record identifies any conservative
+Every field must map to an implementation enforcement point and a metric. The
+selected foundation's qualification record identifies any conservative
 overcharge and any memory outside the ledger. Runtime-sized opaque payloads
 cannot bypass this mapping through an extension API.
 
 ### 5.2. Cross-field validity
 
-JSON Schema validates shape and individual ranges. The policy constructor
-must additionally reject these inconsistent configurations, using checked
-arithmetic before allocating:
+JSON Schema validates shape and individual ranges. The policy constructor must
+additionally reject these inconsistent configurations, using checked arithmetic
+before allocating:
 
 1. An ingress byte budget smaller than `max_inbound_bytes + 2`, or an ordinary
    egress byte budget smaller than `max_outbound_bytes + 2` after control
@@ -289,17 +289,17 @@ arithmetic before allocating:
 5. Control reserve consuming the entire egress item or byte budget, or
    terminal reserve consuming the entire event item budget.
 6. Control slots below outgoing requests plus incoming requests plus active
-   prompts plus one connection-control slot. This conservative profile
-   reserves one bounded answer or cancellation obligation per admitted owner.
+   prompts plus one connection-control slot. This conservative profile reserves
+   one bounded answer or cancellation obligation per admitted owner.
 7. Control bytes below control slots multiplied by
    `max_control_frame_bytes + 2`, or a control frame larger than the outbound
    frame limit. Include delimiter storage in the reserved wire capacity.
 8. Terminal event slots below active prompts plus one connection-terminal
-   slot. Full-fidelity result payloads still need ordinary byte admission;
-   lack of it produces explicit overload, never a fabricated result.
+   slot. Full-fidelity result payloads still need ordinary byte admission; lack
+   of it produces explicit overload, never a fabricated result.
 9. Global handler, CPU-job, or waiting-call caps below a single connection's
-   corresponding cap; or shared bytes below the protected control reserve
-   for the maximum connection count.
+   corresponding cap; or shared bytes below the protected control reserve for
+   the maximum connection count.
 10. A complete bounded control envelope, including the largest permitted
     correlation identifier, that cannot fit its configured control-frame
     limit. Validate this with the selected schema/encoder, including escaping.
@@ -320,22 +320,22 @@ traffic cannot borrow it.
 The `max_connections` permit counts a connection generation until retirement,
 including any interval after `Closed`. Retirement requires release of its
 leases, decoded nodes, workers, routes, pending metadata, and retained owned
-state. Reconnection acquires a new permit from the same host budget. This
-keeps per-generation structural limits meaningful across repeated closure;
+state. Reconnection acquires a new permit from the same host budget. This keeps
+per-generation structural limits meaningful across repeated closure;
 zero-length payloads cannot evade them. Host-retained independent copies stay
 outside this ledger. A status snapshot does not retire its source generation.
 
-The default submission interface fails promptly when it cannot admit work.
-An explicit waiting interface has its own bounded waiter count and deadline.
+The default submission interface fails promptly when it cannot admit work. An
+explicit waiting interface has its own bounded waiter count and deadline.
 Waiting callers can retain input outside the library before admission; that
-memory remains the caller's responsibility and must appear in API docs.
-Magitek must not capture unlimited caller payloads in a hidden wait queue.
+memory remains the caller's responsibility and must appear in API docs. Magitek
+must not capture unlimited caller payloads in a hidden wait queue.
 
 Reservations follow work through queue removal, decoding, SDK handoff,
 application delivery, and partial writes. Queue item occupancy may decrease
-when an item moves, but the connection/shared payload charge survives until
-the last relevant owner releases it. Treat each representation change as a
-transfer or a temporarily double-charged copy.
+when an item moves, but the connection/shared payload charge survives until the
+last relevant owner releases it. Treat each representation change as a transfer
+or a temporarily double-charged copy.
 
 Round-robin service among ready connections and bounded work batches prevent
 one busy connection from monopolizing admitted driver work. Admission waiting
@@ -349,21 +349,21 @@ The proposed event API returns a non-cloneable owning `EventLease`. Its view
 borrows the typed payload. Each queued or issued lease retains one item permit
 from `buffers.events.items`, plus its applicable byte and node charges, until
 drop or committed transfer. Dequeueing changes queue occupancy, not that
-lifetime permit; even an empty/null event consumes a slot. Explicit transfer
-to a host-owned bounded sink reserves destination capacity before releasing
-the Magitek reservation; failed transfer returns the lease.
+lifetime permit; even an empty/null event consumes a slot. Explicit transfer to
+a host-owned bounded sink reserves destination capacity before releasing the
+Magitek reservation; failed transfer returns the lease.
 
-Transfer commits atomically when the destination owns both the payload and
-its corresponding reservation. Before that point, cancellation retains or
-returns the source lease. After it, destination ownership controls release.
-Neither cancellation nor close can create an uncharged ownership interval.
+Transfer commits atomically when the destination owns both the payload and its
+corresponding reservation. Before that point, cancellation retains or returns
+the source lease. After it, destination ownership controls release. Neither
+cancellation nor close can create an uncharged ownership interval.
 
 A host may copy a borrowed view into its own allocation, but that copy is
 outside Magitek's guarantee and does not release the original charge. Document
 that boundary visibly. Closing a connection does not revoke outstanding event
 leases. Their payload charges remain visible in the shared budget until
-release, and their generation permit remains held until retirement. A
-reconnect cannot reset the account and hide retained memory or decoded nodes.
+release, and their generation permit remains held until retirement. A reconnect
+cannot reset the account and hide retained memory or decoded nodes.
 
 The core has no disk spool. A host persistence adapter may accept a transfer
 and later release it under its own durable-write contract. Magitek must not
@@ -388,8 +388,8 @@ explicit profile dispositions. The initial enforced profile rejects duplicate
 keys and terminates on framing/size violations. A bounded protocol error may
 precede closure when correlation and writer capacity permit it.
 
-Every supported frame receives an ingress ordinal before concurrent work.
-Keep any reorder state bounded. On end-of-file with a partial frame, report
+Every supported frame receives an ingress ordinal before concurrent work. Keep
+any reorder state bounded. On end-of-file with a partial frame, report
 incomplete input and discard that unclassified remainder. Never forward it as
 an enforced ACP frame.
 
@@ -407,11 +407,11 @@ handler starts. If a full result cannot obtain ordinary data capacity, the
 handler can emit a bounded error using its reserved obligation. If even the
 bounded response cannot proceed, terminate with the original pressure cause.
 
-Select control work before unrelated unsent data where protocol ordering
-allows it. Preserve causal order: cancellation cannot overtake its submitted
-prompt, and each reverse-request response retains its original correlation
-and any profile-required causal order. Priority never interrupts a frame
-already writing.
+Select control work before unrelated unsent data where protocol ordering allows
+it. Preserve causal order: cancellation cannot overtake its submitted prompt,
+and each reverse-request response retains its original correlation and any
+profile-required causal order. Priority never interrupts a frame already
+writing.
 
 A single ordered stream cannot guarantee finite retention, lossless delivery,
 and uninterrupted control progress against an uncooperative producer. A reply
@@ -425,15 +425,15 @@ operations. Processing and physical-write stalls use their named deadlines.
 
 Drain stderr independently from protocol stdout, through the execution
 adapter's bounded diagnostic path. A log sink cannot hold the only protocol
-reader. Diagnostic loss may coalesce or truncate with a count; protocol
-history may not silently adopt that policy. Do not allocate a pseudo-terminal
-for the ACP byte-stream profile.
+reader. Diagnostic loss may coalesce or truncate with a count; protocol history
+may not silently adopt that policy. Do not allocate a pseudo-terminal for the
+ACP byte-stream profile.
 
 A proxy consumes framing/accounting primitives without adopting Magitek's
-client session state. Its enforced mode preserves allowed frame bytes and
-line endings, applies policy, and fails closed on unsupported framing or
-resource overflow. A transparent byte proxy is a separately selected mode
-with no ACP enforcement claim. There is no runtime downgrade between them.
+client session state. Its enforced mode preserves allowed frame bytes and line
+endings, applies policy, and fails closed on unsupported framing or resource
+overflow. A transparent byte proxy is a separately selected mode with no ACP
+enforcement claim. There is no runtime downgrade between them.
 
 ## 7. Dispatch, ordering, and event delivery
 
@@ -451,17 +451,17 @@ obligation ends. Reaching the incoming-request cap produces a bounded refusal
 or explicit connection failure, without spawning another task.
 
 The driver applies a finite frame/byte work quota per poll and yields after
-that quota. The chosen engine must expose enough control to enforce this
-rule. If it cannot, qualify a narrower integration or reject that engine.
+that quota. The chosen engine must expose enough control to enforce this rule.
+If it cannot, qualify a narrower integration or reject that engine.
 
 ### 7.2. Ordered events and completion evidence
 
 Assign a monotonically increasing sequence within each connection/session
 generation, and end the generation before sequence exhaustion. The completion
-watermark identifies the prefix of relevant session updates that must precede
-a prompt result. The delivery watermark advances only when the consumer
-actually receives the corresponding event lease, contiguously. Enqueueing or
-routing an event does not establish delivery.
+watermark identifies the prefix of relevant session updates that must precede a
+prompt result. The delivery watermark advances only when the consumer actually
+receives the corresponding event lease, contiguously. Enqueueing or routing an
+event does not establish delivery.
 
 Fence public `PeerResult` completion, including a separate operation future,
 until the delivery watermark reaches its completion watermark. Status may
@@ -492,14 +492,14 @@ _Figure 2: Protocol completion carries ordering evidence, not persistence._
 
 The host may poll the next event before persisting the preceding one. Its
 durability acknowledgement therefore remains separate from the delivery
-watermark. A Loro terminal projection must wait for the host's required
-durable prefix, not merely for Magitek's prompt response.
+watermark. A Loro terminal projection must wait for the host's required durable
+prefix, not merely for Magitek's prompt response.
 
 Stable ACP v1 session updates can arrive outside an active turn and do not
-supply a universal prompt identifier.[^6] Initially admit one active prompt
-per session. Preserve session-level updates and the wire-observed order;
-never invent turn provenance for a late or unsolicited update. A protocol
-violation makes attribution uncertain even when local sequencing is intact.
+supply a universal prompt identifier.[^6] Initially admit one active prompt per
+session. Preserve session-level updates and the wire-observed order; never
+invent turn provenance for a late or unsolicited update. A protocol violation
+makes attribution uncertain even when local sequencing is intact.
 
 ### 7.3. Fidelity, saturation, and terminal visibility
 
@@ -509,20 +509,20 @@ unsupported-message outcome, with a bounded raw envelope when the profile can
 retain it. If it cannot, mark the stream incomplete and close the strict
 history path. A warning followed by silent omission cannot satisfy G3.
 
-Use a separate bounded terminal-status cell so clients can observe failure
-even when they stop draining event leases. Allocate and account for the cell
-and its fixed or capped cause storage at connection admission. An overload
-update must not need ordinary payload or decoded-node capacity. The cell
-records the generation, first terminal cause, completion and delivery
-watermarks, `delivery_pending`, completeness flag, and cleanup state. Replacing
-a status snapshot may lose intermediate status transitions; it never discards
-an ACP history event under a claim of successful delivery.
+Use a separate bounded terminal-status cell so clients can observe failure even
+when they stop draining event leases. Allocate and account for the cell and its
+fixed or capped cause storage at connection admission. An overload update must
+not need ordinary payload or decoded-node capacity. The cell records the
+generation, first terminal cause, completion and delivery watermarks,
+`delivery_pending`, completeness flag, and cleanup state. Replacing a status
+snapshot may lose intermediate status transitions; it never discards an ACP
+history event under a claim of successful delivery.
 
 Reserved terminal event slots allow a small result/failure marker to join the
-ordered stream where feasible. Large result payloads still need data budget.
-If pressure prevents retaining the full prefix, terminal status reports that
-fact out of band. Shutdown does not wait forever for an event consumer, and
-failure does not become normal completion merely because the peer later exits.
+ordered stream where feasible. Large result payloads still need data budget. If
+pressure prevents retaining the full prefix, terminal status reports that fact
+out of band. Shutdown does not wait forever for an event consumer, and failure
+does not become normal completion merely because the peer later exits.
 
 ## 8. Session lifecycle and host services
 
@@ -556,15 +556,14 @@ _Figure 3: Protocol closure does not establish external process exit._
 
 Quiescing refuses new work but permits admitted obligations to settle within
 the drain budget. One owner coordinates closure; concurrent close callers
-observe the same terminal cause and cleanup progress. `Closed` establishes
-that owned protocol work has stopped, while separately issued event leases
-may still retain accounted payloads and their generation permit. Protocol
-closure and budget retirement are distinct. External process state remains
-separate.
+observe the same terminal cause and cleanup progress. `Closed` establishes that
+owned protocol work has stopped, while separately issued event leases may still
+retain accounted payloads and their generation permit. Protocol closure and
+budget retirement are distinct. External process state remains separate.
 
 If a session exposes a close operation, use it only when supported. A local
-session-handle drop releases local ownership under a documented policy; it
-does not claim that remote execution stopped. The connection owner retains
+session-handle drop releases local ownership under a documented policy; it does
+not claim that remote execution stopped. The connection owner retains
 responsibility for unsettled work and resulting uncertainty.
 
 ### 8.2. Permissions and authentication
@@ -589,9 +588,9 @@ handler jobs, response size limits, deadlines, and generation checks.
 Filesystem replies obey the outbound frame limit; a file larger than the
 supported reply cannot allocate beyond that limit before refusal.
 
-Terminal services require explicit host execution location and limits for
-live terminal handles, retained output, and outstanding waits. Derive their
-initial caps from `max_routes` and `max_incoming_requests`, and allocate
+Terminal services require explicit host execution location and limits for live
+terminal handles, retained output, and outstanding waits. Derive their initial
+caps from `max_routes` and `max_incoming_requests`, and allocate
 terminal-output bytes from the existing payload budget; there is no hidden
 terminal buffer allowance. Advertise terminal capability only after these
 host-side limits are part of the qualified profile.
@@ -605,29 +604,29 @@ accidentally execute a requested terminal on the orchestrator's host.
 
 ### 9.1. Submission evidence
 
-| Outcome | Required evidence | Retry implication |
-| --- | --- | --- |
-| `NotSubmitted` | Admission failed, or the writer removed the request before any publication attempt. | A host may decide to submit it again. |
-| `OutcomeUnknown` | Publication began or the implementation cannot exclude remote receipt. | Reconciliation is required before repeating a consequential request. |
-| `PeerResult` | A correlated peer response passed validation; public completion also satisfies its delivery fence. | Interpret the protocol result; this is not a durable host commit. |
-| `CancellationRequested` | The client accepted a cancellation obligation. | Work may still continue. |
-| `PeerCancelled` | The peer supplied the relevant terminal cancellation evidence. | Process exit and side-effect rollback remain separate facts. |
+| Outcome                 | Required evidence                                                                                  | Retry implication                                                    |
+| ----------------------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `NotSubmitted`          | Admission failed, or the writer removed the request before any publication attempt.                | A host may decide to submit it again.                                |
+| `OutcomeUnknown`        | Publication began or the implementation cannot exclude remote receipt.                             | Reconciliation is required before repeating a consequential request. |
+| `PeerResult`            | A correlated peer response passed validation; public completion also satisfies its delivery fence. | Interpret the protocol result; this is not a durable host commit.    |
+| `CancellationRequested` | The client accepted a cancellation obligation.                                                     | Work may still continue.                                             |
+| `PeerCancelled`         | The peer supplied the relevant terminal cancellation evidence.                                     | Process exit and side-effect rollback remain separate facts.         |
 
 _Table 7: Evidence levels exposed to command-journal owners._
 
 The writer transition from queued to publication-attempted is atomic with the
 local cancellation decision. Conservative uncertainty is acceptable; claiming
-`NotSubmitted` after possible publication is not. Dropping a submission
-future before admission sends nothing. After admission, an operation handle
-or connection status retains the obligation and eventual outcome.
+`NotSubmitted` after possible publication is not. Dropping a submission future
+before admission sends nothing. After admission, an operation handle or
+connection status retains the obligation and eventual outcome.
 
 ### 9.2. Cancellation and deadlines
 
-Session cancellation, JSON-RPC request cancellation where supported, local
-wait cancellation, protocol close, and external process termination have
-distinct operations. A cancel deadline that expires produces a stalled or
-uncertain result and closes/escalates according to the host contract; it does
-not manufacture a peer cancellation acknowledgement.
+Session cancellation, JSON-RPC request cancellation where supported, local wait
+cancellation, protocol close, and external process termination have distinct
+operations. A cancel deadline that expires produces a stalled or uncertain
+result and closes/escalates according to the host contract; it does not
+manufacture a peer cancellation acknowledgement.
 
 Use monotonic deadlines with these start points and coverage:
 
@@ -659,16 +658,16 @@ local observation and cannot establish which remote side effects occurred.
 Keep the first protocol/transport failure as the primary cause and attach
 cleanup failures as additional evidence. Bound cause-chain depth and text.
 Expose `Overloaded`, `FrameTooLarge`, `ProtocolViolation`, `PeerStalled`,
-`TransportClosed`, `HostServiceFailed`, and `CleanupRequired` as proposed
-typed categories. Exact Rust variant names remain an API design decision.
+`TransportClosed`, `HostServiceFailed`, and `CleanupRequired` as proposed typed
+categories. Exact Rust variant names remain an API design decision.
 
 On termination, fence new admission, retire pending responders once, resolve
 waiters, stop transport work, and retain charges for outstanding leases or
 workers. Do not let a fresh connection reuse the previous generation's
 authority. Never reuse an outgoing wire request ID within a connection
 generation, including after timeout or cancellation. Use a bounded monotonic
-allocator and end the generation before its encoded identifier range wraps;
-an ever-growing tombstone set is unnecessary. Local generation identity also
+allocator and end the generation before its encoded identifier range wraps; an
+ever-growing tombstone set is unnecessary. Local generation identity also
 prevents stale external callbacks from crossing that boundary. Bound any
 diagnostic history of retired IDs.
 
@@ -686,19 +685,19 @@ intent and received data, and must not treat Magitek admission as durability.
 ### 10.1. Proposed Rust surface
 
 These names communicate responsibilities; they are not implemented APIs or
-compilable examples. Prefer a small facade over exposing every chosen
-engine's handle directly.
+compilable examples. Prefer a small facade over exposing every chosen engine's
+handle directly.
 
-| Surface | Contract |
-| --- | --- |
-| `ClientBuilder` | Accept streams, a validated immutable policy, shared budget, host services, and diagnostics sink. Reject unsupported profiles before session work. |
-| `ConnectionDriver` | A host-driven future that owns protocol progress and termination. Its lifecycle is explicit. |
-| `ClientHandle` | Submit admitted connection operations and create/load sessions. No unrestricted SDK escape hatch. |
-| `SessionHandle` | Submit one prompt at a time initially; cancel; access ordered session events and terminal evidence. |
-| `EventLease` | Borrow typed full-fidelity data while retaining the resource charge; release or transfer explicitly. |
-| `HostServices` | Supply independent permission, authentication, filesystem, and terminal capabilities. |
-| `TransportParts` | Protocol read/write halves, transport identity, and a separate lifecycle observation channel. |
-| `ConnectionStatus` | Expose bounded state snapshots, incomplete-prefix evidence, primary failure, and cleanup status. |
+| Surface            | Contract                                                                                                                                           |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ClientBuilder`    | Accept streams, a validated immutable policy, shared budget, host services, and diagnostics sink. Reject unsupported profiles before session work. |
+| `ConnectionDriver` | A host-driven future that owns protocol progress and termination. Its lifecycle is explicit.                                                       |
+| `ClientHandle`     | Submit admitted connection operations and create/load sessions. No unrestricted SDK escape hatch.                                                  |
+| `SessionHandle`    | Submit one prompt at a time initially; cancel; access ordered session events and terminal evidence.                                                |
+| `EventLease`       | Borrow typed full-fidelity data while retaining the resource charge; release or transfer explicitly.                                               |
+| `HostServices`     | Supply independent permission, authentication, filesystem, and terminal capabilities.                                                              |
+| `TransportParts`   | Protocol read/write halves, transport identity, and a separate lifecycle observation channel.                                                      |
+| `ConnectionStatus` | Expose bounded state snapshots, incomplete-prefix evidence, primary failure, and cleanup status.                                                   |
 
 _Table 8: Proposed API responsibilities and ownership._
 
@@ -721,9 +720,9 @@ overflow and timeout contract. An integration mock proves the interface shape,
 while a pinned real Podbot integration proves the consumer milestone.
 
 Podbot's Kubernetes proposal initially declares reconnect unsupported, with a
-later supervisor/bridge and generation fencing.[^8] That later backend is not
-a prerequisite for the first Magitek release. Transport support is recorded
-per qualified adapter, not inferred from an `AsyncRead` implementation.
+later supervisor/bridge and generation fencing.[^8] That later backend is not a
+prerequisite for the first Magitek release. Transport support is recorded per
+qualified adapter, not inferred from an `AsyncRead` implementation.
 
 ### 10.3. Lody history and durable command integration
 
@@ -751,8 +750,8 @@ ACP-hosting integration.
 Expose a compact snapshot per connection and shared budget. Record admitted,
 queued, in-flight, and retained-after-close payloads separately. Counters must
 include pending requests, parked permissions, handler/CPU jobs, waiter count,
-queue age, decoder duration, write progress, event delivery watermark,
-overload reason, and unsettled cleanup.
+queue age, decoder duration, write progress, event delivery watermark, overload
+reason, and unsettled cleanup.
 
 Keep bounded monotonic timestamps for the last received byte and complete
 frame, plus current handler queue/run age and broker-delivery/decision age.
@@ -762,15 +761,15 @@ remote computation has stalled.
 
 Latency measurements identify their boundaries: complete-frame-to-routing,
 admission wait, writer queue residence, write duration, and event-consumer lag
-are separate quantities. A timer firing proves scheduler service to that
-timer, not progress of the writer or host history sink.
+are separate quantities. A timer firing proves scheduler service to that timer,
+not progress of the writer or host history sink.
 
 Use bounded nonblocking capture of diagnostic facts, with formatting/export
 outside the dispatcher. Coalesce repetitive diagnostics with an explicit
 suppressed count. Limit label cardinality; session IDs, request IDs, paths,
 prompts, and tool payloads are not metric labels. Default logs omit payloads,
-credentials, and permission content. A diagnostic export cannot become a
-second unbounded transcript queue.
+credentials, and permission content. A diagnostic export cannot become a second
+unbounded transcript queue.
 
 Health snapshots distinguish protocol readiness, transport progress, host
 consumer pressure, and external process state. Lody's presence and replication
@@ -784,16 +783,16 @@ The test harness exposes controllable byte streams, a monotonic test clock,
 counted payload ownership, and host-service gates. These seams make scheduling
 and failure evidence reproducible without paid model inference.
 
-| Property | Observable condition | Verification and limit |
-| --- | --- | --- |
-| P1: Conservation | Every retained owned representation has a live charge; total charges never exceed local/shared capacity; final release returns it once. | Property generators for acquire/transfer/copy/drop and a finite FizzBee ownership model. Does not prove allocator RSS. |
-| P2: Fragmentation invariance | The same frame bytes produce the same acceptance and enforcement decision for every tested chunk partition. | Boundary-biased byte generators and shrinking to the shortest divergent split. Does not establish all peer implementations conform. |
-| P3: Honest submission | `NotSubmitted` never follows a publication attempt; close/cancel cannot admit a fenced generation. | Finite state exploration plus an instrumented writer at every partial-write boundary. Does not infer remote execution. |
-| P4: Ordered prefix | Successful prompt-result delivery follows all preceding relevant delivered session updates, with a valid watermark. | Generated interleavings and a reference event trace; preserve session-level ambiguity where ACP lacks turn identity. |
-| P5: Bounded obligations | Pending calls, handlers, waiters, routes, and event ownership remain within policy, including during close. | Adversarial fixtures and resource-ledger assertions across SDK paths. Host-owned copies remain outside the contract. |
-| P6: Explicit terminal failure | A saturated event consumer can still observe the terminal cause and incomplete-prefix status. | Stop event polling, exhaust capacity, then inspect the independent status cell. Does not preserve data lost in a process crash. |
-| P7: Enforcement continuity | An enforced proxy never switches to uninspected forwarding on overflow, malformed input, or partial EOF. | Byte-preserving allow/deny fixtures under all fragmentation cases. Does not replace host authorization policy. |
-| P8: Conditional progress | With declared executor service and a cooperative peer, admitted bounded work progresses; otherwise a defined failure becomes observable. | Virtual-time stalls and qualified real-runtime measurements. No unconditional scheduler or network liveness proof. |
+| Property                      | Observable condition                                                                                                                     | Verification and limit                                                                                                              |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| P1: Conservation              | Every retained owned representation has a live charge; total charges never exceed local/shared capacity; final release returns it once.  | Property generators for acquire/transfer/copy/drop and a finite FizzBee ownership model. Does not prove allocator RSS.              |
+| P2: Fragmentation invariance  | The same frame bytes produce the same acceptance and enforcement decision for every tested chunk partition.                              | Boundary-biased byte generators and shrinking to the shortest divergent split. Does not establish all peer implementations conform. |
+| P3: Honest submission         | `NotSubmitted` never follows a publication attempt; close/cancel cannot admit a fenced generation.                                       | Finite state exploration plus an instrumented writer at every partial-write boundary. Does not infer remote execution.              |
+| P4: Ordered prefix            | Successful prompt-result delivery follows all preceding relevant delivered session updates, with a valid watermark.                      | Generated interleavings and a reference event trace; preserve session-level ambiguity where ACP lacks turn identity.                |
+| P5: Bounded obligations       | Pending calls, handlers, waiters, routes, and event ownership remain within policy, including during close.                              | Adversarial fixtures and resource-ledger assertions across SDK paths. Host-owned copies remain outside the contract.                |
+| P6: Explicit terminal failure | A saturated event consumer can still observe the terminal cause and incomplete-prefix status.                                            | Stop event polling, exhaust capacity, then inspect the independent status cell. Does not preserve data lost in a process crash.     |
+| P7: Enforcement continuity    | An enforced proxy never switches to uninspected forwarding on overflow, malformed input, or partial EOF.                                 | Byte-preserving allow/deny fixtures under all fragmentation cases. Does not replace host authorization policy.                      |
+| P8: Conditional progress      | With declared executor service and a cooperative peer, admitted bounded work progresses; otherwise a defined failure becomes observable. | Virtual-time stalls and qualified real-runtime measurements. No unconditional scheduler or network liveness proof.                  |
 
 _Table 9: Correctness properties, evidence methods, and exclusions._
 
@@ -828,32 +827,32 @@ proxy modes. Mandatory combinations include:
   status evidence despite similar missing-output symptoms.
 
 Cover remaining profile combinations pairwise after these risk-selected cases.
-Record excluded combinations explicitly; pairwise coverage does not replace
-the listed multi-fault cases. Compare a real supported agent with the fake
-peer to check initialization, callbacks, prompt streaming, and cancellation.
+Record excluded combinations explicitly; pairwise coverage does not replace the
+listed multi-fault cases. Compare a real supported agent with the fake peer to
+check initialization, callbacks, prompt streaming, and cancellation.
 
 ### 12.3. Proposed qualification profile
 
 Benchmark reports must name the CPU allocation, memory limit, runtime worker
 count, dependency pins, agent versions, policy, traffic distribution, and
-measurement boundaries. The following are proposed gates, not measured
-results or deployment promises.
+measurement boundaries. The following are proposed gates, not measured results
+or deployment promises.
 
-| Exercise | Proposed pass condition |
-| --- | --- |
-| Healthy synthetic fleet | 60 connections, each producing ten 1 KiB updates per second; p99.9 complete-frame-to-routing below 250 ms and no sample above two seconds with a reserved CPU service allocation. |
-| Sustained overload | Owned-payload/work ledgers stay within policy; the quiet admitted connection progresses or receives an explicit scoped failure. |
-| Lifetime churn | At least 10,000 connect/session/close cycles return all non-retained charges; retained leases, decoded nodes, and closed-generation permits remain visible, including empty/null payloads. |
-| Soak | A 24-hour synthetic run with repeated stalls, cancellation, and reconnect attempts has no unexplained retained-charge growth. |
-| Largest supported frame | Exact-limit traffic completes within declared conditions; one-byte-over traffic fails before excess retention. |
-| Combined failure | Every mandatory section 12.2 combination yields a bounded, typed outcome and no false successful prefix. |
+| Exercise                | Proposed pass condition                                                                                                                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Healthy synthetic fleet | 60 connections, each producing ten 1 KiB updates per second; p99.9 complete-frame-to-routing below 250 ms and no sample above two seconds with a reserved CPU service allocation.          |
+| Sustained overload      | Owned-payload/work ledgers stay within policy; the quiet admitted connection progresses or receives an explicit scoped failure.                                                            |
+| Lifetime churn          | At least 10,000 connect/session/close cycles return all non-retained charges; retained leases, decoded nodes, and closed-generation permits remain visible, including empty/null payloads. |
+| Soak                    | A 24-hour synthetic run with repeated stalls, cancellation, and reconnect attempts has no unexplained retained-charge growth.                                                              |
+| Largest supported frame | Exact-limit traffic completes within declared conditions; one-byte-over traffic fails before excess retention.                                                                             |
+| Combined failure        | Every mandatory section 12.2 combination yields a bounded, typed outcome and no false successful prefix.                                                                                   |
 
 _Table 10: Proposed release evidence, separate from policy defaults._
 
 Use a runner profile within the programme's four-vCPU/eight-GiB ceiling; record
-which CPU service the driver actually receives. A dedicated thread alone is
-not a CPU reservation. If the target cannot be met, publish the measurements
-and revise the supported profile or architecture through review. Never hide a
+which CPU service the driver actually receives. A dedicated thread alone is not
+a CPU reservation. If the target cannot be met, publish the measurements and
+revise the supported profile or architecture through review. Never hide a
 failed measurement by excluding saturated connections from the report.
 
 The library soak does not replace the Lody daemon's combined replication,
@@ -867,15 +866,15 @@ client, host services/lifecycle semantics, and real consumer integrations
 before release qualification. Deferred work has no edge into those required
 phases unless a supported consumer establishes that dependency explicitly.
 
-| Decision | Evidence required | Owner role / gate |
-| --- | --- | --- |
-| Implementation foundation | Complete ownership map and must-pass fixtures for upstream, Agentkit, and the reusable Mango peer where feasible. | Library maintainers; phase 1. |
-| Public API and minimum Rust version | Working host integration, exact dependency requirements, and compiled examples. | Library maintainers; phases 1–2. |
-| Policy defaults and largest frame | Real-agent payload distribution, resource accounting, and measured scheduling cost. | Library and host maintainers; phases 2–4. |
-| Host-service capability profile | Concrete filesystem/terminal location, authority, limits, and refusal semantics. | Host integrators; phase 3. |
-| Podbot hosted-session adoption | A pinned implemented interface or a small agreed upstream change, followed by real integration evidence. | Podbot integrators; phase 4. |
-| Release licence and support policy | Maintainer choice and dependency-licence compatibility; no assumed licence. | Repository maintainers; before publication. |
-| Additional transports/platforms | A concrete consumer, bounded transport behaviour, and lifecycle qualification. | Maintainers; conditional phase 5. |
+| Decision                            | Evidence required                                                                                                 | Owner role / gate                           |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| Implementation foundation           | Complete ownership map and must-pass fixtures for upstream, Agentkit, and the reusable Mango peer where feasible. | Library maintainers; phase 1.               |
+| Public API and minimum Rust version | Working host integration, exact dependency requirements, and compiled examples.                                   | Library maintainers; phases 1–2.            |
+| Policy defaults and largest frame   | Real-agent payload distribution, resource accounting, and measured scheduling cost.                               | Library and host maintainers; phases 2–4.   |
+| Host-service capability profile     | Concrete filesystem/terminal location, authority, limits, and refusal semantics.                                  | Host integrators; phase 3.                  |
+| Podbot hosted-session adoption      | A pinned implemented interface or a small agreed upstream change, followed by real integration evidence.          | Podbot integrators; phase 4.                |
+| Release licence and support policy  | Maintainer choice and dependency-licence compatibility; no assumed licence.                                       | Repository maintainers; before publication. |
+| Additional transports/platforms     | A concrete consumer, bounded transport behaviour, and lifecycle qualification.                                    | Maintainers; conditional phase 5.           |
 
 _Table 11: Decisions that remain open and the evidence that closes them._
 
@@ -886,9 +885,9 @@ support explicitly as the stable schema evolves.
 
 Draft ACP v2, HTTP transports, Windows process qualification, durable remote
 reattachment, and alternate runtime adapters remain conditional. A future
-backend must preserve the same accounting and uncertainty contracts or expose
-a separately named guarantee profile. No supported adapter may silently relax
-the enforcement policy to fit its transport.
+backend must preserve the same accounting and uncertainty contracts or expose a
+separately named guarantee profile. No supported adapter may silently relax the
+enforcement policy to fit its transport.
 
 ## 14. References
 
@@ -909,7 +908,8 @@ are normative proposals in this document, not claims about those sources.
     [frame assembler][podbot-frame].
 [^5]: [Official SDK ordering contract][sdk-ordering] at the SDK revision above.
 [^6]: [ACP v1 overview][acp-overview] and [prompt-turn contract][acp-turn].
-[^7]: [Podbot hosted-session API proposal][podbot-session] at its revision above.
+[^7]: [Podbot hosted-session API proposal][podbot-session] at its revision
+      above.
 [^8]: [Podbot Kubernetes RFC][podbot-kubernetes] at
     `fa0be50ae147acd53e1f374ba2971b1c1f67f0b9`, proposed in PR #285.
 [^9]: Lody at `d3179e1f7538b61d0a6acc6be0a324281be4e3c0`:
