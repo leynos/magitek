@@ -234,4 +234,3 @@ jobs:
           install-mold: 'true'
       - run: make test
 """
-
