@@ -45,7 +45,7 @@ jobs:
             !**/target/**
             !**/dist/**
       - name: Setup uv
-        uses: astral-sh/setup-uv@12d13f90bc3a5a1971bebad4beb09a4dfa962e91
+        uses: astral-sh/setup-uv@b0fdc328c65964c12e997446c1c75b18577b9f1a
       - name: Install the YAML lint tools
         uses: leynos/shared-actions/.github/actions/install-yaml-lint@26c918632c5413039a84358fafe012a4399a9ec7
       # `make nixie` is a public target, so CI provisions exactly the Nixie and
