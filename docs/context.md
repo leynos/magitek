@@ -2,7 +2,7 @@
 
 - **Status:** Draft v0.1; vocabulary and evidence baseline for a proposed
   library. No runtime implementation or qualification result exists here.
-- **Date:** 2026-11-14.
+- **Date:** 2026-11-19.
 - **Audience:** Maintainers and embedding-application implementers.
 - **Companion documents:** [Terms of reference](terms-of-reference.md),
   [technical design](magitek-design.md), and [GIST roadmap](roadmap.md).
@@ -110,16 +110,17 @@ Proposals describe intended mechanisms; correctness remains open until
 qualification. Source inspection establishes code structure, not performance or
 complete interoperability.
 
-| Evidence                                                            | Status and significance                                                                                                                                                    |
-| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Project commission, 2026-11-14                                      | Known requirements: shared native Rust client, bounded work, explicit outcomes, and separate host responsibilities.                                                        |
-| Official Rust ACP SDK at `05fd3893cca2f1be2eb3a262b0f7da2c52abaa58` | Known source baseline: SDK 5.3.0 and schema 1.18.0. Reuse remains the preferred qualification candidate, not an established implementation choice.                         |
-| Podbot at `c2c3b232730cea3ac8a88adde06d43c2e93cb309`                | Known implementation: protocol proxy, several explicit buffers, initialization masking, runtime policy, and a bounded stdin-command queue.                                 |
-| Podbot ADR 002 at the same commit                                   | Known proposal: `HostedSession` separates protocol I/O from typed control events. Its status is Proposed; availability remains a downstream gate.                          |
-| Podbot Kubernetes RFC at `fa0be50ae147acd53e1f374ba2971b1c1f67f0b9` | Known proposal in pull request 285: backend-neutral transport, initially unsupported reconnection, and later fenced supervision. It does not establish Kubernetes support. |
-| Lody at `d3179e1f7538b61d0a6acc6be0a324281be4e3c0`                  | Known baseline for the preceding daemon investigation. Its deployment on any particular machine remains unverified.                                                        |
-| Agentkit fork at `08355e7086a715be0a26b151d92f7c0812adda5d`         | Known comparison candidate: SDK 3.6.0 with forked schema 1.14.0. A bounded transport surface alone does not qualify every high-level path.                                 |
-| Mango at `7b6bd40917f3d7275cbf2145f2970290e67bb3a0`                 | Known comparison candidate: the inspected branch identifies 0.8.0; inspected published documentation concerns 0.7.1. Keep those baselines separate.                        |
+| Evidence                                                            | Status and significance                                                                                                                                                       |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Project commission, 2026-11-14                                      | Known requirements: shared native Rust client, bounded work, explicit outcomes, and separate host responsibilities.                                                           |
+| Official Rust ACP SDK at `05fd3893cca2f1be2eb3a262b0f7da2c52abaa58` | Known source baseline: SDK 5.3.0 and schema 1.18.0. Reuse remains the preferred qualification candidate, not an established implementation choice.                            |
+| Podbot at `c2c3b232730cea3ac8a88adde06d43c2e93cb309`                | Known implementation: protocol proxy, several explicit buffers, initialization masking, runtime policy, and a bounded stdin-command queue.                                    |
+| Podbot ADR 002 at the same commit                                   | Known proposal: `HostedSession` separates protocol I/O from typed control events. Its status is Proposed; availability remains a downstream gate.                             |
+| Podbot Kubernetes RFC at `fa0be50ae147acd53e1f374ba2971b1c1f67f0b9` | Known proposal in pull request 285: backend-neutral transport, initially unsupported reconnection, and later fenced supervision. It does not establish Kubernetes support.    |
+| Lody at `d3179e1f7538b61d0a6acc6be0a324281be4e3c0`                  | Known baseline for the preceding daemon investigation. Its deployment on any particular machine remains unverified.                                                           |
+| Agentkit fork at `08355e7086a715be0a26b151d92f7c0812adda5d`         | Known comparison candidate: SDK 3.6.0 with forked schema 1.14.0. A bounded transport surface alone does not qualify every high-level path.                                    |
+| Mango at `7b6bd40917f3d7275cbf2145f2970290e67bb3a0`                 | Known comparison candidate: the inspected branch identifies 0.8.0; inspected published documentation concerns 0.7.1. Keep those baselines separate.                           |
+| Wireframe at `052065fa61cfc93d730f8a75a794da1a959dc2ca`             | Known proposal: version 0.3.0; RFCs 0003–0008 are proposed and every phase 21 roadmap task is unchecked. Planned source of budgeting and stream parsing, not a delivered one. |
 
 *Table 4: Evidence ledger; all external observations are source inspections.*
 
@@ -143,6 +144,13 @@ control traffic behind data, even when internal queues reserve control
 capacity. An external callback can consume resources beyond the library's
 accounting unless the host supplies the agreed execution boundary.
 
+A fourth tension is sequencing. Magitek plans to obtain budgeting and stream
+parsing from Wireframe, whose corresponding contracts are proposals. Magitek's
+dependent tasks cannot start before the Wireframe tasks that deliver them, and
+a bounded Wireframe layer does not bound an ACP engine placed above it.
+[ADR 0001](adrs/adr-0001-reuse-wireframe-for-budgeting-and-stream-parsing.md)
+records the decision and its risks.
+
 The technical design resolves these tensions as proposed contracts. The roadmap
 tests them before widening adoption. The first delivery gate requires one local
 ACP client; real Podbot and daemon integration follow. Kubernetes, distributed
@@ -151,7 +159,8 @@ read-only observation milestone does not depend on Magitek.
 
 ## 5. Sources
 
-The following sources were inspected on 2026-11-14:
+The following sources were inspected on 2026-11-14, except Wireframe, which was
+inspected on 2026-11-19:
 
 - [Official Rust ACP SDK source baseline][sdk].
 - [ACP session-update schema][acp-schema] and
@@ -164,6 +173,8 @@ The following sources were inspected on 2026-11-14:
 - [Lody source baseline][lody].
 - [Agentkit comparison baseline][agentkit].
 - [Mango ACP harness design][mango].
+- [Wireframe source baseline][wireframe] and its
+  [roadmap phase 21][wireframe-roadmap].
 
 [^1]: Podbot [ADR 002][podbot-session], status Proposed at the pinned commit.
 
@@ -178,3 +189,5 @@ The following sources were inspected on 2026-11-14:
 [lody]: https://github.com/LodyAI/Lody/tree/d3179e1f7538b61d0a6acc6be0a324281be4e3c0
 [agentkit]: https://github.com/danielkov/rust-sdk/tree/08355e7086a715be0a26b151d92f7c0812adda5d
 [mango]: https://github.com/juliopolycarpo/mango-external-agents/blob/7b6bd40917f3d7275cbf2145f2970290e67bb3a0/docs/harness-acp.md
+[wireframe]: https://github.com/leynos/wireframe/tree/052065fa61cfc93d730f8a75a794da1a959dc2ca
+[wireframe-roadmap]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/docs/roadmap.md#21-protocol-neutral-adapters-for-the-first-consumers

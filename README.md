@@ -55,6 +55,12 @@ same requirements. The context document records their source baselines and
 known gaps. Existing bounded implementations are candidates for reuse; the
 choice needs evidence from the required failure cases.
 
+Beneath that protocol engine, Magitek plans to obtain resource budgeting and
+stream parsing from [Wireframe][wireframe]. The Wireframe work that delivers
+those primitives is still proposed, so the [roadmap][roadmap] names the
+Wireframe task that blocks each Magitek task. [ADR 0001][adr-0001] records the
+decision.
+
 ______________________________________________________________________
 
 ## Proposed capabilities
@@ -162,3 +168,5 @@ versions and reproducible traces when reporting compatibility findings.
 [context]: docs/context.md
 [design]: docs/magitek-design.md
 [roadmap]: docs/roadmap.md
+[wireframe]: https://github.com/leynos/wireframe
+[adr-0001]: docs/adrs/adr-0001-reuse-wireframe-for-budgeting-and-stream-parsing.md

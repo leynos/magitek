@@ -1,7 +1,7 @@
 # Magitek – technical design
 
-- **Status:** Draft v0.1; proposed architecture, no implementation claim.
-- **Date:** 2026-11-14.
+- **Status:** Draft v0.2; proposed architecture, no implementation claim.
+- **Date:** 2026-11-19.
 - **Audience:** Rust library implementers, host integrators, and reviewers.
 - **Scope:** A bounded asynchronous Agent Client Protocol (ACP) client and
   reusable protocol framing and resource-accounting primitives.
@@ -58,11 +58,17 @@ The proposed first implementation has these boundaries:
    and external process exit. Never replay an uncertain prompt automatically.
 6. Expose framing and accounting to an ACP-aware proxy without requiring that
    proxy to become an ACP client.
+7. Obtain resource accounting, byte-stream framing, bounded decoding, and
+   bounded encoding from Wireframe's native-protocol primitives, without its
+   server router, default envelope, or an embedded ACP engine. Each capability
+   waits for the Wireframe roadmap task that delivers it. Section 3.3 and
+   [ADR 0001](adrs/adr-0001-reuse-wireframe-for-budgeting-and-stream-parsing.md)
+   record this decision.
 
-This draft does not select a new JSON-RPC engine, promise a fixed resident
-memory ceiling, or claim that library scheduling guarantees host heartbeats.
-JSON-RPC means JavaScript Object Notation Remote Procedure Call. Hard process
-limits and daemon liveness scheduling belong to the host.
+This draft does not select a JSON-RPC engine, promise a fixed resident memory
+ceiling, or claim that library scheduling guarantees host heartbeats. JSON-RPC
+means JavaScript Object Notation Remote Procedure Call. Hard process limits and
+daemon liveness scheduling belong to the host.
 
 ## 2. Requirements and boundaries
 
@@ -95,9 +101,11 @@ _Table 2: Responsibility boundaries for an embedded connection._
 
 The core does not depend on Loro, SQLite, `oauth2`, `restson`, Bollard, or a
 Kubernetes client. The Lody host may use those libraries in their existing
-domains. A host can load settings with `ortho-config` and convert them into a
-validated Magitek policy; Magitek does not search repository configuration or
-environment variables for authority.
+domains. Wireframe is the planned exception among infrastructure libraries: the
+core uses its framing and reservation primitives, and none of its server,
+routing, or connection-pool facilities (section 3.3). A host can load settings
+with `ortho-config` and convert them into a validated Magitek policy; Magitek
+does not search repository configuration or environment variables for authority.
 
 Provider catalogues, workflow scheduling, durable command journals, transcript
 storage, and arbitrary process reattachment remain host responsibilities.
@@ -130,12 +138,13 @@ The source investigation on 14 November 2026 found these constraints. These are
 source observations, not Magitek benchmark results. The context document
 records the source pins and evidence categories.
 
-| Candidate or consumer  | Observed evidence                                                                                                                                                                         | Consequence for qualification                                                                                       |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Official ACP SDK 5.3.0 | Its connection and session paths use unbounded channels, and its byte adapter reads complete lines without a configured line limit.[^1]                                                   | Audit all producers, internal handoffs, task admission, and subscriptions. A bounded wrapper alone is insufficient. |
-| Agentkit SDK 3.6.0     | Provides frame charges and explicit admission limits. Its ordinary transport and high-level session paths retain legacy or unbounded interfaces.[^2]                                      | Qualify the complete selected path and reconcile its earlier SDK/schema family with the required protocol surface.  |
-| Mango ACP harness      | The inspected main branch uses official schema types with its own bounded JSON-RPC peer and host process ports. Its harness deliberately normalizes and filters some session data.[^3]    | Evaluate the lower-level peer separately from the normalized harness; preserve full-fidelity delivery requirements. |
-| Podbot                 | A bounded stdin command queue exists, while diagnostics and protocol output share a drain loop. Oversized unterminated ACP output triggers raw forwarding in the inspected assembler.[^4] | Carry shared stall, fragmentation, and enforcement invariants into proxy adoption.                                  |
+| Candidate or consumer  | Observed evidence                                                                                                                                                                         | Consequence for qualification                                                                                            |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Official ACP SDK 5.3.0 | Its connection and session paths use unbounded channels, and its byte adapter reads complete lines without a configured line limit.[^1]                                                   | Audit all producers, internal handoffs, task admission, and subscriptions. A bounded wrapper alone is insufficient.      |
+| Agentkit SDK 3.6.0     | Provides frame charges and explicit admission limits. Its ordinary transport and high-level session paths retain legacy or unbounded interfaces.[^2]                                      | Qualify the complete selected path and reconcile its earlier SDK/schema family with the required protocol surface.       |
+| Mango ACP harness      | The inspected main branch uses official schema types with its own bounded JSON-RPC peer and host process ports. Its harness deliberately normalizes and filters some session data.[^3]    | Evaluate the lower-level peer separately from the normalized harness; preserve full-fidelity delivery requirements.      |
+| Podbot                 | A bounded stdin command queue exists, while diagnostics and protocol output share a drain loop. Oversized unterminated ACP output triggers raw forwarding in the inspected assembler.[^4] | Carry shared stall, fragmentation, and enforcement invariants into proxy adoption.                                       |
+| Wireframe 0.3.0        | RFCs 0003–0008 propose bounded delimiter framing, typed reservations, and a full-duplex driver for a standalone ACP consumer. Every phase 21 roadmap task is unchecked.[^11]              | Treat the contracts as proposals. Gate each Magitek task on the delivering Wireframe task and qualify a pinned revision. |
 
 _Table 3: Source evidence that constrains the implementation choice._
 
@@ -158,20 +167,82 @@ a producer-to-consumer ownership map. The record must cover physical framing,
 decoding, protocol dispatch, pending replies, dynamic handlers, session
 subscriptions, outgoing serialization, and physical writes.
 
-| Option                                            | Prefer when                                                                                                 | Reject or defer when                                                                           |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Official SDK with qualified bounded integration   | All retained paths can satisfy the contract with a maintainable change set.                                 | Hidden queues or escaped handles prevent admission enforcement.                                |
-| Agentkit-based integration                        | Its charged paths and compatible adapters pass the complete client tests at an acceptable maintenance cost. | Version lag or unqualified session paths require a larger divergence than the upstream option. |
-| Reuse Mango's lower-level peer                    | Its peer can expose the required ACP surface without harness filtering or unwanted host ownership.          | Required fidelity, host callbacks, or dependency constraints do not fit.                       |
-| New narrow dispatcher using official schema types | The preceding options fail documented must-pass criteria, and maintainers accept the maintenance cost.      | The proposal merely duplicates an existing qualified path.                                     |
+| Option                                          | Prefer when                                                                                                 | Reject or defer when                                                                           |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Official SDK with qualified bounded integration | All retained paths can satisfy the contract with a maintainable change set.                                 | Hidden queues or escaped handles prevent admission enforcement.                                |
+| Agentkit-based integration                      | Its charged paths and compatible adapters pass the complete client tests at an acceptable maintenance cost. | Version lag or unqualified session paths require a larger divergence than the upstream option. |
+| Reuse Mango's lower-level peer                  | Its peer can expose the required ACP surface without harness filtering or unwanted host ownership.          | Required fidelity, host callbacks, or dependency constraints do not fit.                       |
+| Narrow dispatcher on Wireframe's duplex driver  | The preceding options fail documented must-pass criteria, and Wireframe tasks 21.8.5–21.8.6 are delivered.  | The proposal merely duplicates an existing qualified path, or adds a second dispatch loop.     |
 
 _Table 4: Foundation choices and their decision criteria._
 
+Every option runs above Wireframe's framing and reservation layer (section
+3.3). The gate therefore selects the ACP engine: the component that owns
+correlation, dispatch, and session state. The narrow dispatcher uses official
+schema types and Wireframe's duplex session driver instead of a dispatcher
+written from nothing.
+
 The decision record must identify licences, dependency changes, the supported
 stable-v1 surface, outstanding upstream work, maintenance ownership, and the
-cost of carrying a patch. A schema-only dispatcher changes the original
-SDK-reuse premise and therefore requires an explicit recorded decision. The
-roadmap permits that decision; this draft does not silently make it.
+cost of carrying a patch. It must also pin the qualified Wireframe revision. A
+schema-only dispatcher changes the original SDK-reuse premise and therefore
+requires an explicit recorded decision. The roadmap permits that decision; this
+draft does not silently make it.
+
+### 3.3. Wireframe reuse and adoption gates
+
+[ADR 0001](adrs/adr-0001-reuse-wireframe-for-budgeting-and-stream-parsing.md)
+records the decision to obtain budgeting and stream parsing from Wireframe.
+Wireframe's proposed contracts name Magitek as a standalone consumer and
+require these primitives to work without a server application, a default
+envelope, or a second protocol engine.[^11] The contracts are proposals, and
+the tasks below are unchecked at the inspected revision. A mapping in Table 5
+describes planned reuse, not delivered behaviour.
+
+| Magitek mechanism                                     | Design sections | Wireframe contract   | Gating Wireframe task | First dependent Magitek tasks     |
+| ----------------------------------------------------- | --------------- | -------------------- | --------------------- | --------------------------------- |
+| Immutable policy validation                           | 5.1–5.2         | RFC 0007             | 21.8.1                | 1.1.2                             |
+| Reservations, ownership transfer, and retirement      | 5.3–5.4         | RFC 0007             | 21.8.2                | 2.1.1, 2.1.2                      |
+| Bounded delimiter framing and raw JSONL frames        | 6.1             | RFC 0006             | 21.8.3                | 2.2.1                             |
+| Admitted semantic decoding and bounded encoding       | 4.2, 5.1, 6.1   | RFCs 0003, 0006–0007 | 21.8.4                | 1.2.5, 2.2.2, 2.2.3               |
+| Byte-preserving enforced proxy inspection             | 6.3             | RFCs 0006, 0008      | 21.8.8                | 4.1.1                             |
+| Combined overload and ownership verification evidence | 12              | RFCs 0002, 0007–0008 | 21.8.9                | 4.3.2                             |
+| Enforcement-point map and interface migration record  | 5.1, 13         | RFCs 0003, 0008      | 21.8.10               | 4.4.2                             |
+| Supplied transport halves and role-neutral driver     | 4.2, 7.1        | RFCs 0004–0005       | 21.8.5                | 2.3.1, 2.3.3 (conditional)        |
+| Publication evidence and pressure-independent closure | 6.1, 7.3, 9.1   | RFCs 0004, 0007      | 21.8.6                | 2.2.3, 3.2.1, 3.2.2 (conditional) |
+
+_Table 5: Planned Wireframe reuse and the task that gates each mechanism._
+
+The final two rows apply only if the foundation decision selects Wireframe's
+duplex session driver. Under any other engine, Magitek implements independent
+progress and publication evidence above Wireframe's reservations, and those two
+Wireframe tasks do not block it. Wireframe's own prerequisites apply
+transitively: tasks 21.8.1–21.8.4 also need Wireframe tasks 21.1.1–21.1.3 and
+21.2.1, and task 21.8.5 needs 21.2.2.
+
+Magitek retains everything that gives the mechanisms ACP meaning:
+
+- The resource-policy schema, its ACP-specific cross-field rules, and the
+  conversion of a validated policy into a Wireframe profile.
+- The JSON adapter's profile choices, including duplicate-key rejection, batch
+  handling, and line-ending acceptance.
+- Correlation, capability negotiation, session and generation state, event
+  sequencing, watermarks, and the delivery fence.
+- Submission evidence, terminal failure categories, and the public facade.
+
+Wireframe types stay inside the transport and admission modules. ACP session
+logic depends on Magitek-owned types, so a change of Wireframe revision cannot
+alter the public contract without a deliberate facade change. The enforced
+paths expose no Wireframe handle that bypasses accounting.
+
+Each adopted Wireframe revision needs a qualification record. It names the
+exact revision, the enforcement point behind every policy field, any
+conservative overcharge, and memory that remains outside the ledger. Wireframe
+cannot meter an engine's internal queues. The ownership map must therefore
+cover each handoff between Wireframe and the selected engine, and must show
+that the engine accepts admitted frames without an uncharged second read or
+parse. If Wireframe withdraws a gating contract, the dependent Magitek tasks
+remain blocked until a superseding decision record selects another source.
 
 ## 4. Architecture and execution ownership
 
@@ -185,7 +256,7 @@ independently.
 flowchart TB
     Host["Lody or Corbusier host"] --> Client["Magitek client"]
     Host --> Adapter["Execution adapter"]
-    Client --> Transport["Bounded protocol transport"]
+    Client --> Transport["Bounded protocol transport on Wireframe primitives"]
     Transport --> Adapter
     Adapter --> Agent["ACP agent"]
     Adapter -->|Lifecycle status| Host
@@ -195,10 +266,12 @@ flowchart TB
 _Figure 1: Execution ownership and ACP traffic follow separate paths._
 
 Start with one crate and internal modules for transport, admission, client
-state, events, and diagnostics. Place an optional local-process adapter behind
-an explicit feature. Keep a Podbot adapter in integration code until its shared
-contract stabilizes. The core must not depend on Podbot, and Podbot must not
-depend on a Magitek adapter that creates a dependency cycle.
+state, events, and diagnostics. The transport and admission modules adapt
+Wireframe's framing and reservation primitives to the Magitek policy; the
+remaining modules own ACP behaviour. Place an optional local-process adapter
+behind an explicit feature. Keep a Podbot adapter in integration code until its
+shared contract stabilizes. The core must not depend on Podbot, and Podbot must
+not depend on a Magitek adapter that creates a dependency cycle.
 
 ### 4.2. Execution domains
 
@@ -211,7 +284,7 @@ depend on a Magitek adapter that creates a dependency cycle.
 | Host-service workers | Permission, filesystem, and terminal service calls.                      | Respect admission, response obligations, generation checks, and cancellation.            |
 | Event consumer       | Host projection, persistence, and presentation.                          | Release or transfer leases; accept explicit pressure if it falls behind.                 |
 
-_Table 5: Work placement and progress obligations._
+_Table 6: Work placement and progress obligations._
 
 The first runtime adapter uses Tokio byte traits and timing. An SDK shim may
 adapt these to the SDK's I/O traits. It must not expose an uncharged raw
@@ -251,7 +324,7 @@ Zero, negative values, and unlimited sentinels are invalid.
 | `deadlines_ms` | Bounds admission waits, initialization, ordinary request/response exchanges, partial-frame assembly, decode processing, writes, service work, permission waits, drain, cancellation grace, and close. |
 | `global`       | Caps admitted connection generations, including retained closed generations, payload bytes, handler/CPU jobs, and waiting calls across a host budget.                                                 |
 
-_Table 6: Resource policy groups and their units._
+_Table 7: Resource policy groups and their units._
 
 Encoded frame sizes exclude the line delimiter. The framer separately allows at
 most the selected delimiter's two bytes. An owned payload charge counts
@@ -267,16 +340,20 @@ bounded storage it authorizes. A decoder must reserve a conservative envelope
 before materialization, or use a budget-aware visitor; parsing an unrestricted
 object tree and checking its size afterwards does not satisfy the contract.
 
-Every field must map to an implementation enforcement point and a metric. The
-selected foundation's qualification record identifies any conservative
-overcharge and any memory outside the ledger. Runtime-sized opaque payloads
-cannot bypass this mapping through an extension API.
+Every field must map to an implementation enforcement point and a metric.
+Magitek converts a validated policy into a Wireframe reservation profile, so
+many enforcement points sit in the pinned Wireframe revision. The qualification
+records for that revision and for the selected foundation identify any
+conservative overcharge and any memory outside the ledger. Runtime-sized opaque
+payloads cannot bypass this mapping through an extension API.
 
 ### 5.2. Cross-field validity
 
 JSON Schema validates shape and individual ranges. The policy constructor must
 additionally reject these inconsistent configurations, using checked arithmetic
-before allocating:
+before allocating. Wireframe's policy validation supplies the generic
+parent/child, reserve, and overflow checks; Magitek adds the rules that depend
+on ACP operations and its control envelope:
 
 1. An ingress byte budget smaller than `max_inbound_bytes + 2`, or an ordinary
    egress byte budget smaller than `max_outbound_bytes + 2` after control
@@ -311,11 +388,12 @@ those qualification obligations.
 
 ### 5.3. Admission and ownership transfer
 
-Use one shared host budget with per-connection subordinate budgets. Acquire a
-complete reservation atomically, or roll back immediately; never hold one
-budget's lock or partial permit while awaiting another. Protected control
-capacity counts against the shared budget at connection admission. Ordinary
-traffic cannot borrow it.
+Use one shared host budget with per-connection subordinate budgets, expressed
+through Wireframe's shared-host, connection-generation, and stage reservation
+scopes. Acquire a complete reservation atomically, or roll back immediately;
+never hold one budget's lock or partial permit while awaiting another.
+Protected control capacity counts against the shared budget at connection
+admission. Ordinary traffic cannot borrow it.
 
 The `max_connections` permit counts a connection generation until retirement,
 including any interval after `Closed`. Retirement requires release of its
@@ -346,12 +424,14 @@ promise delivery through a stalled physical stream.
 ### 5.4. Event leases and reclamation
 
 The proposed event API returns a non-cloneable owning `EventLease`. Its view
-borrows the typed payload. Each queued or issued lease retains one item permit
-from `buffers.events.items`, plus its applicable byte and node charges, until
-drop or committed transfer. Dequeueing changes queue occupancy, not that
-lifetime permit; even an empty/null event consumes a slot. Explicit transfer to
-a host-owned bounded sink reserves destination capacity before releasing the
-Magitek reservation; failed transfer returns the lease.
+borrows the typed payload. The lease keeps its charge through a Wireframe
+ownership guard, held directly or behind a Magitek-owned ledger port. Each
+queued or issued lease retains one item permit from `buffers.events.items`,
+plus its applicable byte and node charges, until drop or committed transfer.
+Dequeueing changes queue occupancy, not that lifetime permit; even an
+empty/null event consumes a slot. Explicit transfer to a host-owned bounded
+sink reserves destination capacity before releasing the Magitek reservation;
+failed transfer returns the lease.
 
 Transfer commits atomically when the destination owns both the payload and its
 corresponding reservation. Before that point, cancellation retains or returns
@@ -373,13 +453,15 @@ label that transfer as a disk commit.
 
 ### 6.1. Input and output framing
 
-Accept newline-delimited UTF-8 JSON for the initial byte-stream profile.
-Validate both complete and fragmented frame sizes before extending a buffer.
-The same bytes must receive the same size and policy decision regardless of
-transport chunk boundaries. Bound batches and structural JSON complexity
-according to the selected ACP profile, or reject an unsupported batch
-explicitly; do not accidentally expand one admitted frame into unlimited
-dispatch work.
+Accept newline-delimited UTF-8 JSON for the initial byte-stream profile, using
+Wireframe's bounded delimiter framing and raw JSONL frames. JSON validation and
+the profile dispositions below belong to Magitek's adapter, which runs under
+Wireframe's admitted decoding. Validate both complete and fragmented frame
+sizes before extending a buffer. The same bytes must receive the same size and
+policy decision regardless of transport chunk boundaries. Bound batches and
+structural JSON complexity according to the selected ACP profile, or reject an
+unsupported batch explicitly; do not accidentally expand one admitted frame
+into unlimited dispatch work.
 
 The partial-frame deadline starts at its first byte and does not reset for a
 trickle of additional bytes. Empty lines, malformed JSON, invalid UTF-8,
@@ -393,11 +475,12 @@ any reorder state bounded. On end-of-file with a partial frame, report
 incomplete input and discard that unclassified remainder. Never forward it as
 an enforced ACP frame.
 
-The writer owns physical writes. It serializes through a bounded sink, charges
-temporary output, and keeps the frame charge during partial writes. The write
-deadline starts when the frame enters the writer queue, covering local queue
-time and transmission. A timeout after any possible transmission closes that
-stream; continuing after an abandoned partial JSON line would corrupt it.
+The writer owns physical writes. It serializes through Wireframe's bounded
+encoder, charges temporary output, and keeps the frame charge during partial
+writes. The write deadline starts when the frame enters the writer queue,
+covering local queue time and transmission. A timeout after any possible
+transmission closes that stream; continuing after an abandoned partial JSON
+line would corrupt it.
 
 ### 6.2. Responses, control reserve, and unavoidable stalls
 
@@ -430,10 +513,12 @@ may not silently adopt that policy. Do not allocate a pseudo-terminal for the
 ACP byte-stream profile.
 
 A proxy consumes framing/accounting primitives without adopting Magitek's
-client session state. Its enforced mode preserves allowed frame bytes and line
-endings, applies policy, and fails closed on unsupported framing or resource
-overflow. A transparent byte proxy is a separately selected mode with no ACP
-enforcement claim. There is no runtime downgrade between them.
+client session state. Those primitives are Wireframe's raw frames and
+reservations, configured with the same ACP profile choices as the client. Its
+enforced mode preserves allowed frame bytes and line endings, applies policy,
+and fails closed on unsupported framing or resource overflow. A transparent
+byte proxy is a separately selected mode with no ACP enforcement claim. There
+is no runtime downgrade between them.
 
 ## 7. Dispatch, ordering, and event delivery
 
@@ -612,7 +697,7 @@ accidentally execute a requested terminal on the orchestrator's host.
 | `CancellationRequested` | The client accepted a cancellation obligation.                                                     | Work may still continue.                                             |
 | `PeerCancelled`         | The peer supplied the relevant terminal cancellation evidence.                                     | Process exit and side-effect rollback remain separate facts.         |
 
-_Table 7: Evidence levels exposed to command-journal owners._
+_Table 8: Evidence levels exposed to command-journal owners._
 
 The writer transition from queued to publication-attempted is atomic with the
 local cancellation decision. Conservative uncertainty is acceptable; claiming
@@ -699,7 +784,7 @@ handle directly.
 | `TransportParts`   | Protocol read/write halves, transport identity, and a separate lifecycle observation channel.                                                      |
 | `ConnectionStatus` | Expose bounded state snapshots, incomplete-prefix evidence, primary failure, and cleanup status.                                                   |
 
-_Table 8: Proposed API responsibilities and ownership._
+_Table 9: Proposed API responsibilities and ownership._
 
 Return capability-specific failures before sending unsupported operations.
 Carry negotiated capabilities in a read-only view. Extension requests pass
@@ -794,7 +879,7 @@ and failure evidence reproducible without paid model inference.
 | P7: Enforcement continuity    | An enforced proxy never switches to uninspected forwarding on overflow, malformed input, or partial EOF.                                 | Byte-preserving allow/deny fixtures under all fragmentation cases. Does not replace host authorization policy.                      |
 | P8: Conditional progress      | With declared executor service and a cooperative peer, admitted bounded work progresses; otherwise a defined failure becomes observable. | Virtual-time stalls and qualified real-runtime measurements. No unconditional scheduler or network liveness proof.                  |
 
-_Table 9: Correctness properties, evidence methods, and exclusions._
+_Table 10: Correctness properties, evidence methods, and exclusions._
 
 Use FizzBee for the small admission/publication/close model, with at most two
 connections, two operations per connection, and small permit counts. Check
@@ -802,6 +887,13 @@ conservation, no admission after fencing, and honest submission through all
 reachable interleavings. State fairness assumptions for progress separately.
 Keep the model synchronized with implementation transition names. Do not model
 the complete ACP schema, filesystem, CRDT, or operating system.[^10]
+
+Wireframe verifies its own primitives, including conservation and
+partition-invariant framing, under its roadmap task 21.8.9. Magitek does not
+repeat those proofs. Its properties and model cover the integration: the policy
+conversion, every handoff between Wireframe and the selected engine, and the
+Magitek-owned transitions for publication, delivery, and close. A property that
+holds inside Wireframe establishes nothing about an uncharged path beside it.
 
 Property-based generators should bias around zero/one capacity, exact frame
 limits, one byte above a limit, empty/partial frames, deep structures, delayed
@@ -847,7 +939,7 @@ or deployment promises.
 | Largest supported frame | Exact-limit traffic completes within declared conditions; one-byte-over traffic fails before excess retention.                                                                             |
 | Combined failure        | Every mandatory section 12.2 combination yields a bounded, typed outcome and no false successful prefix.                                                                                   |
 
-_Table 10: Proposed release evidence, separate from policy defaults._
+_Table 11: Proposed release evidence, separate from policy defaults._
 
 Use a runner profile within the programme's four-vCPU/eight-GiB ceiling; record
 which CPU service the driver actually receives. A dedicated thread alone is not
@@ -869,6 +961,7 @@ phases unless a supported consumer establishes that dependency explicitly.
 | Decision                            | Evidence required                                                                                                 | Owner role / gate                           |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | Implementation foundation           | Complete ownership map and must-pass fixtures for upstream, Agentkit, and the reusable Mango peer where feasible. | Library maintainers; phase 1.               |
+| Wireframe revision and driver use   | A pinned revision qualified beneath the shared exchange, and a recorded choice on its duplex session driver.      | Library maintainers; phase 1.               |
 | Public API and minimum Rust version | Working host integration, exact dependency requirements, and compiled examples.                                   | Library maintainers; phases 1–2.            |
 | Policy defaults and largest frame   | Real-agent payload distribution, resource accounting, and measured scheduling cost.                               | Library and host maintainers; phases 2–4.   |
 | Host-service capability profile     | Concrete filesystem/terminal location, authority, limits, and refusal semantics.                                  | Host integrators; phase 3.                  |
@@ -876,10 +969,12 @@ phases unless a supported consumer establishes that dependency explicitly.
 | Release licence and support policy  | Maintainer choice and dependency-licence compatibility; no assumed licence.                                       | Repository maintainers; before publication. |
 | Additional transports/platforms     | A concrete consumer, bounded transport behaviour, and lifecycle qualification.                                    | Maintainers; conditional phase 5.           |
 
-_Table 11: Decisions that remain open and the evidence that closes them._
+_Table 12: Decisions that remain open and the evidence that closes them._
 
-Version the public API deliberately. Pin protocol/schema dependencies during
-qualification and rerun the ownership/compatibility corpus on upgrades. Do not
+Version the public API deliberately. Pin protocol/schema dependencies and the
+Wireframe revision during qualification, and rerun the ownership/compatibility
+corpus on upgrades. Wireframe's phase 21 interfaces are pre-1.0 and may be
+replaced; use an exact revision until a published release contains them. Do not
 infer an ACP wire version from a Rust crate's major version. Revisit capability
 support explicitly as the stable schema evolves.
 
@@ -917,6 +1012,12 @@ are normative proposals in this document, not claims about those sources.
     [pending-operation persistence][lody-pending].
 [^10]: [FizzBee project][fizzbee]. Its use here is a proposed finite-state
     verification method; this documentation change does not execute a model.
+[^11]: Wireframe at `052065fa61cfc93d730f8a75a794da1a959dc2ca`, inspected on
+    19 November 2026: [manifest][wireframe-manifest],
+    [roadmap phase 21][wireframe-roadmap], and RFCs
+    [0003][wireframe-rfc-0003], [0004][wireframe-rfc-0004],
+    [0005][wireframe-rfc-0005], [0006][wireframe-rfc-0006],
+    [0007][wireframe-rfc-0007], and [0008][wireframe-rfc-0008].
 
 [sdk-manifest]: https://github.com/agentclientprotocol/rust-sdk/blob/05fd3893cca2f1be2eb3a262b0f7da2c52abaa58/Cargo.toml
 [sdk-jsonrpc]: https://github.com/agentclientprotocol/rust-sdk/blob/05fd3893cca2f1be2eb3a262b0f7da2c52abaa58/src/agent-client-protocol/src/jsonrpc.rs
@@ -938,3 +1039,11 @@ are normative proposals in this document, not claims about those sources.
 [lody-history]: https://github.com/LodyAI/Lody/blob/d3179e1f7538b61d0a6acc6be0a324281be4e3c0/.agents/notes/implemented/bug-fix/2026-10-14-daemon-history-writes-scale-with-turn-size.md
 [lody-pending]: https://github.com/LodyAI/Lody/blob/d3179e1f7538b61d0a6acc6be0a324281be4e3c0/.agents/notes/implemented/bug-fix/2026-10-22-loro-pending-persistence.md
 [fizzbee]: https://github.com/fizzbee-io/fizzbee
+[wireframe-manifest]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/Cargo.toml
+[wireframe-roadmap]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/docs/roadmap.md#21-protocol-neutral-adapters-for-the-first-consumers
+[wireframe-rfc-0003]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/docs/rfcs/rfc-0003-native-message-adapter-boundary.md
+[wireframe-rfc-0004]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/docs/rfcs/rfc-0004-duplex-session-driver.md
+[wireframe-rfc-0005]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/docs/rfcs/rfc-0005-negotiated-transport-entry-points.md
+[wireframe-rfc-0006]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/docs/rfcs/rfc-0006-configurable-framing-primitives.md
+[wireframe-rfc-0007]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/docs/rfcs/rfc-0007-budgets-scheduling-and-assembly.md
+[wireframe-rfc-0008]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/docs/rfcs/rfc-0008-external-adapter-conformance-harness.md
