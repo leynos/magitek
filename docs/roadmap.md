@@ -22,6 +22,17 @@ observation milestone has no Magitek dependency. Podbot's proposed stream and
 lifecycle interface is an explicit external adoption gate, while Kubernetes
 support remains outside the initial release path.
 
+Magitek plans to obtain budgeting and stream parsing from Wireframe, as
+[ADR 0001](adrs/adr-0001-reuse-wireframe-for-budgeting-and-stream-parsing.md)
+and [magitek-design.md](magitek-design.md) §3.3 record. A "Blocked by
+Wireframe" entry names a task in the [Wireframe roadmap][wireframe-roadmap]
+that must be complete before the Magitek task starts; Wireframe's own
+prerequisites apply transitively. "Requires" entries name Magitek tasks only. A
+conditional entry applies only if task 1.2.6 selects Wireframe's duplex session
+driver. Every cited Wireframe task was unchecked at the inspected revision, so
+only tasks 1.1.3 and 1.2.1 can start before Wireframe delivers task 21.8.1.
+[Wireframe issue 929][wireframe-adoption-issue] tracks that pathway.
+
 ## 1. Qualify the foundation and contract
 
 Idea: a small executable contract and a source-backed engine qualification can
@@ -56,11 +67,16 @@ qualification. See [magitek-design.md](magitek-design.md) §§1–5 and §10.
     markdownlint`, and `make coverage` targets were verified locally.
 - [ ] 1.1.2. Implement immutable resource-policy validation.
   - Requires 1.1.1.
+  - Blocked by Wireframe 21.8.1 (immutable, expressive resource-policy
+    validation). The Wireframe dependency is pinned to a qualified revision
+    or exact release before this task starts (ADR 0001, migration step 2).
   - See [magitek-design.md](magitek-design.md) §5 and the
     [proposed policy schema](contracts/resource-policy.schema.json).
   - Success: structural and relational checks reject impossible reservations,
     arithmetic overflow, and disabled limits; generated boundary cases preserve
     those relationships, and host configuration converts into validated policy.
+    A validated policy converts into a Wireframe reservation profile without
+    weakening a limit; the ACP-specific rules stay in Magitek.
 - [ ] 1.1.3. Define typed delivery evidence and terminal failure contracts.
   - Requires 1.1.1.
   - See [magitek-design.md](magitek-design.md) §§7–10.
@@ -71,16 +87,19 @@ qualification. See [magitek-design.md](magitek-design.md) §§1–5 and §10.
 ### 1.2. Select an engine by its complete retained-work path
 
 Can the preferred ACP implementation expose a path whose buffering and dispatch
-ownership can be bounded? The qualification decides the engine, required patch
-surface, and conditions that would force reconsideration. See
-[magitek-design.md](magitek-design.md) §§3, 5–7, and 12–13.
+ownership can be bounded above Wireframe's framing and reservation layer? The
+qualification decides the engine, required patch surface, and conditions that
+would force reconsideration. See [magitek-design.md](magitek-design.md) §§3,
+5–7, and 12–13.
 
 - [ ] 1.2.1. Add the scripted peer and controllable byte-stream harness.
   - Requires 1.1.1.
   - See [magitek-design.md](magitek-design.md) §§6 and 12.
   - Success: fixtures can fragment reads, short-write output, stall either
     direction, advance test time, and disconnect at a chosen byte boundary;
-    failures reproduce without network access or model inference.
+    failures reproduce without network access or model inference. Wireframe's
+    raw-peer harness (Wireframe 21.1.3) may supply these fixtures where a pinned
+    revision provides it; it does not block this task.
 - [ ] 1.2.2. Implement the official-SDK qualification exchange.
   - Requires 1.1.2, 1.1.3, and 1.2.1.
   - See [magitek-design.md](magitek-design.md) §§3, 7, and 12.
@@ -102,14 +121,30 @@ surface, and conditions that would force reconsideration. See
     normalization; the report identifies fidelity, callback, and ownership
     limits. A failed must-pass condition has reproducible evidence, and branch
     evidence remains distinct from published-version evidence.
-- [ ] 1.2.5. Record the qualified foundation and maintenance decision.
-  - Requires 1.2.3 and 1.2.4.
+- [ ] 1.2.5. Qualify Wireframe's framing and reservation primitives beneath
+  the shared exchange.
+  - Requires 1.2.2.
+  - Blocked by Wireframe 21.8.4 (admitted semantic decoding and bounded
+    encoding).
+  - See [magitek-design.md](magitek-design.md) §§3, 5–6, and 12.
+  - Success: one pinned Wireframe revision carries the shared exchange in both
+    directions under a validated Magitek policy. The ownership map names every
+    reservation, buffer, and handoff between Wireframe and each candidate
+    engine, and shows whether that engine accepts admitted frames without an
+    uncharged second read or parse. The report states whether Wireframe's
+    duplex session driver could serve as the narrow dispatcher.
+- [ ] 1.2.6. Record the qualified foundation and maintenance decision.
+  - Requires 1.2.3, 1.2.4, and 1.2.5.
   - See [magitek-design.md](magitek-design.md) §§3 and 13.
-  - Success: an architectural decision record pins the engine and schema,
-    identifies bounding work, selects property-test tooling and a provisional
-    minimum Rust version, and states patch ownership and licence constraints.
-    Upstream acceptance remains unassumed; a replacement engine requires a
-    recorded decision. No unqualified path enters the advertised profile.
+  - Success: an architectural decision record pins the engine, schema, and
+    Wireframe revision, and selects or rejects Wireframe's duplex session
+    driver. It identifies bounding work, selects property-test tooling and a
+    provisional minimum Rust version, and states patch ownership and licence
+    constraints. If a published Wireframe release supplies the interface, the
+    record states the exact `=` requirement and its documented exception to the
+    caret rule (ADR 0001). Upstream acceptance remains unassumed; a replacement
+    engine requires a recorded decision. No unqualified path enters the
+    advertised profile.
 
 ## 2. Deliver one bounded local ACP client
 
@@ -131,6 +166,8 @@ used by every later transport and callback. See
 
 - [ ] 2.1.1. Implement the resource ledger and charged event leases.
   - Requires 1.1.2 and 1.1.3.
+  - Blocked by Wireframe 21.8.2 (charged ownership transfer and generation
+    retirement).
   - See [magitek-design.md](magitek-design.md) §§5 and 7.
   - Success: count and byte charges follow retained work, including empty/null
     leases across close. Connection admission reserves control and terminal
@@ -139,6 +176,8 @@ used by every later transport and callback. See
     rollback.
 - [ ] 2.1.2. Implement bounded asynchronous admission and cancellation.
   - Requires 2.1.1 and 1.2.1.
+  - Blocked by Wireframe 21.8.2 (bounded first-in, first-out admission with
+    waiter deadlines).
   - See [magitek-design.md](magitek-design.md) §§5 and 9.
   - Success: waiter count and data stay bounded under explicit first-in,
     first-out admission; timeout, cancellation, and close settle permits once.
@@ -153,13 +192,17 @@ parsing policy. See [magitek-design.md](magitek-design.md) §§5–6.
 
 - [ ] 2.2.1. Implement the bounded newline-delimited frame decoder.
   - Requires 1.2.1 and 2.1.1.
+  - Blocked by Wireframe 21.8.3 (bounded delimiter framing and a raw JSONL
+    codec).
   - See [magitek-design.md](magitek-design.md) §6.
   - Success: complete and fragmented oversized frames fail identically before
     excess retention; wire reservations include up to two delimiter bytes.
     Partial tails, text, and line endings have explicit dispositions; generated
     boundaries preserve decisions and trickles cannot reset the frame deadline.
 - [ ] 2.2.2. Add structural accounting and admitted JSON processing.
-  - Requires 1.2.5, 2.1.2, and 2.2.1.
+  - Requires 1.2.6, 2.1.2, and 2.2.1.
+  - Blocked by Wireframe 21.8.4 (admitted semantic decoding and bounded
+    encoding).
   - See [magitek-design.md](magitek-design.md) §§4–6.
   - Success: nesting, nodes, decoded payloads, and work obey limits before
     materialization; duplicate keys and unsupported batches fail explicitly.
@@ -168,6 +211,8 @@ parsing policy. See [magitek-design.md](magitek-design.md) §§5–6.
     expose structural expansion costs.
 - [ ] 2.2.3. Implement a single bounded writer with submission evidence.
   - Requires 1.1.3, 2.1.2, and 2.2.2.
+  - Blocked by Wireframe 21.8.4 (bounded encoding). Conditional: Wireframe
+    21.8.6 (publication evidence and pressure-independent closure).
   - See [magitek-design.md](magitek-design.md) §§6 and 9.
   - Success: output retains charges through short writes and a deadline that
     includes queue time; possible transmission produces uncertainty. The
@@ -181,7 +226,9 @@ This step closes the engine-specific gaps and produces usable progress evidence
 for the local consumer. See [magitek-design.md](magitek-design.md) §§4–7 and 11.
 
 - [ ] 2.3.1. Route the selected engine through the audited bounded path.
-  - Requires 1.2.5, 2.2.2, and 2.2.3.
+  - Requires 1.2.6, 2.2.2, and 2.2.3.
+  - Conditional: blocked by Wireframe 21.8.5 (supplied transport halves and
+    role-neutral driver interfaces).
   - See [magitek-design.md](magitek-design.md) §§3, 5, and 7.
   - Success: adapters preserve charges instead of pumping into an unbounded
     SDK queue; instrumentation covers internal session buffers and task
@@ -196,6 +243,8 @@ for the local consumer. See [magitek-design.md](magitek-design.md) §§4–7 and
     neither accumulate tombstones/routes nor let late replies revive operations.
 - [ ] 2.3.3. Implement independent reader, writer, and dispatch progress rules.
   - Requires 2.3.2.
+  - Conditional: blocked by Wireframe 21.8.5 (supplied transport halves and
+    role-neutral driver interfaces).
   - See [magitek-design.md](magitek-design.md) §§4, 6, and 7.
   - Success: ordered handlers perform bounded capture only; expensive work runs
     outside the driver. Saturation produces selective waiting or explicit
@@ -312,6 +361,8 @@ for host-owned journals and supervisors. See
 
 - [ ] 3.2.1. Implement request cancellation and prompt cancellation separately.
   - Requires 2.2.3, 2.3.2, and 2.4.2.
+  - Conditional: blocked by Wireframe 21.8.6 (publication evidence and
+    pressure-independent closure).
   - See [magitek-design.md](magitek-design.md) §§8–9.
   - Success: drop, withdrawal, cancellation intent, and peer stop reason remain
     distinct. Extend the FizzBee model over the atomic publication/cancel
@@ -320,6 +371,8 @@ for host-owned journals and supervisors. See
     a host turn budget remains explicit.
 - [ ] 3.2.2. Implement explicit close and selective-stall termination.
   - Requires 3.1.1 and 3.2.1.
+  - Conditional: blocked by Wireframe 21.8.6 (publication evidence and
+    pressure-independent closure).
   - See [magitek-design.md](magitek-design.md) §§6, 9, and 11.
   - Success: write, dispatch, callback, and consumer stalls produce distinct
     bounded outcomes; close settles waiters and pending calls once. Extend the
@@ -375,6 +428,8 @@ change. See [magitek-design.md](magitek-design.md) §§6, 10, and 13.
 
 - [ ] 4.1.1. Expose byte-preserving inspection with bounded policy decisions.
   - Requires 2.2.2 and 3.2.2.
+  - Blocked by Wireframe 21.8.8 (byte-preserving enforced proxy use without
+    ACP sessions).
   - See [magitek-design.md](magitek-design.md) §§6 and 10.
   - Success: an enforced proxy can inspect admitted frames while forwarding
     allowed bytes unchanged; unsupported or oversized input closes under policy
@@ -447,6 +502,8 @@ profile and expose host scheduling assumptions. See
     the shared scheduler.
 - [ ] 4.3.2. Run the combined saturation and soak qualification.
   - Requires 4.1.4, 4.2.3, and 4.3.1.
+  - Blocked by Wireframe 21.8.9 (combined overload, ownership, and
+    full-duplex invariants).
   - See [magitek-design.md](magitek-design.md) §§11–12.
   - Success: the proposed design §12.3 workload and every mandatory §12.2
     combination have recorded results, including quiet-connection progress,
@@ -469,19 +526,23 @@ operating evidence part of the release decision. See
     overload, and uncertain outcomes. Examples do not imply durable acceptance
     or recovery behaviour supplied only by a host.
 - [ ] 4.4.2. Establish the engine-upgrade and compatibility regression gate.
-  - Requires 1.2.5, 3.3.2, 4.1.4, and 4.2.3.
+  - Requires 1.2.6, 3.3.2, 4.1.4, and 4.2.3.
+  - Blocked by Wireframe 21.8.10 (native interface migration and consumer
+    qualification evidence).
   - See [magitek-design.md](magitek-design.md) §§3, 12, and 13.
-  - Success: the release matrix pins protocol, engine, schema, agents, hosts,
-    and feature profiles; an engine change reruns relevant ownership and E2E
+  - Success: the release matrix pins protocol, engine, schema, the exact
+    Wireframe version consumers must resolve, agents, hosts, and feature
+    profiles; an engine or Wireframe change reruns relevant ownership and E2E
     checks. Fork patches, licences, unsupported paths, and rollback constraints
     remain inspectable.
 - [ ] 4.4.3. Record the release licence and supported implementation profile.
-  - Requires 1.2.5, 2.4.5, and 4.4.2.
+  - Requires 1.2.6, 2.4.5, and 4.4.2.
   - See [magitek-design.md](magitek-design.md) §§3, 12, and 13.
   - Success: maintainers choose a dependency-compatible licence, minimum Rust
     version, runtime and platform profile, feature support, and API versioning
-    policy. The record names tested combinations without implying that this
-    documentation proposal already ships a library.
+    policy. The record states whether a published Wireframe release or an exact
+    revision supplies the phase 21 interfaces. It names tested combinations
+    without implying that this documentation proposal already ships a library.
 - [ ] 4.4.4. Produce the first release candidate and its qualification record.
   - Requires 4.3.2, 4.4.1, and 4.4.3.
   - See [magitek-design.md](magitek-design.md) §§1, 12, and 13.
@@ -548,3 +609,6 @@ actual adoption. See [magitek-design.md](magitek-design.md) §§4, 10, and 13.
   - Success: an architectural decision record identifies the concrete consumer
     benefit, migration path, and preserved ownership boundaries; existing host
     and compatibility suites still exercise every advertised bounded profile.
+
+[wireframe-roadmap]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/docs/roadmap.md#21-protocol-neutral-adapters-for-the-first-consumers
+[wireframe-adoption-issue]: https://github.com/leynos/wireframe/issues/929

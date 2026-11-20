@@ -22,6 +22,7 @@ currently present; protocol modules and host adapters remain future work.
 | `AGENTS.md`                   | Contributor and agent working instructions.                               |
 | `docs/contents.md`            | Documentation index.                                                      |
 | `docs/execplans/`             | Execution plans and validation records.                                   |
+| `docs/adrs/`                  | Architectural decision records.                                           |
 | `docs/baseline-provenance.md` | Source revisions and deliberate adaptations.                              |
 | `typos.local.toml`            | Narrow repository spelling exceptions.                                    |
 | `typos.toml`                  | Generated shared Oxford British spelling dictionary.                      |

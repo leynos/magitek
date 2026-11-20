@@ -32,7 +32,10 @@ contracts, and spelling. `make typecheck` runs Cargo checking separately.
 `make build` and `make release` produce library artefacts, with no executable.
 `make audit` derives the workspace root using Cargo metadata and runs one
 workspace audit. Commit Cargo.lock for reproducible repository validation;
-consumers still resolve library dependencies in their own lockfiles.
+consumers still resolve library dependencies in their own lockfiles. The
+supported Wireframe release is the exact version the release matrix qualifies
+(ADR 0001); a consumer that resolves another version is outside the advertised
+profile.
 
 The full workflow needs clang, `mold`, lld, Python 3.11 or newer, uv, yamllint,
 actionlint, ShellCheck, mdtablefix 0.6.1 or newer, Whitaker, cargo-nextest

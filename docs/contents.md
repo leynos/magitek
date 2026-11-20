@@ -17,6 +17,9 @@
   resource admission, failure semantics, and qualification gates.
 - [GIST roadmap](roadmap.md) – Goals, Ideas, Steps, and Tasks, with explicit
   prerequisites and acceptance criteria.
+- [ADR 0001](adrs/adr-0001-reuse-wireframe-for-budgeting-and-stream-parsing.md)
+  – planned reuse of Wireframe for budgeting and stream parsing, with its
+  adoption gates.
 
 ## Contract artefacts
 

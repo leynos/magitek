@@ -55,6 +55,12 @@ same requirements. The context document records their source baselines and
 known gaps. Existing bounded implementations are candidates for reuse; the
 choice needs evidence from the required failure cases.
 
+Beneath that protocol engine, Magitek plans to obtain resource budgeting and
+stream parsing from [Wireframe][wireframe]. The Wireframe work that delivers
+those primitives is still proposed, so the [roadmap][roadmap] names the
+Wireframe task that blocks each Magitek task. [ADR 0001][adr-0001] records the
+decision.
+
 ______________________________________________________________________
 
 ## Proposed capabilities
@@ -91,15 +97,15 @@ ______________________________________________________________________
 Magitek's proposed client owns ACP interaction within one connection. Its host
 owns the environment and the consequences of agent work.
 
-| Responsibility                                             | Proposed owner           |
-| ---------------------------------------------------------- | ------------------------ |
-| ACP negotiation, correlation, event order, and admission   | Magitek client           |
-| Framing and resource-reservation primitives                | Reusable Magitek layer   |
-| Proxy inspection, authorization, and forwarding policy     | Podbot                   |
-| Process launch, placement, termination, and restart        | Host                     |
-| Filesystem authority and permission decisions              | Host                     |
-| Command journals, durable history, Loro sync, and recovery | Host                     |
-| Ishiban work-item identity and workflow state              | Ishiban and its adapters |
+| Responsibility                                             | Proposed owner                  |
+| ---------------------------------------------------------- | ------------------------------- |
+| ACP negotiation, correlation, event order, and admission   | Magitek client                  |
+| Framing and resource-reservation primitives                | Wireframe, via Magitek adapters |
+| Proxy inspection, authorization, and forwarding policy     | Podbot                          |
+| Process launch, placement, termination, and restart        | Host                            |
+| Filesystem authority and permission decisions              | Host                            |
+| Command journals, durable history, Loro sync, and recovery | Host                            |
+| Ishiban work-item identity and workflow state              | Ishiban and its adapters        |
 
 _Table 1: Proposed responsibility boundaries._
 
@@ -162,3 +168,5 @@ versions and reproducible traces when reporting compatibility findings.
 [context]: docs/context.md
 [design]: docs/magitek-design.md
 [roadmap]: docs/roadmap.md
+[wireframe]: https://github.com/leynos/wireframe
+[adr-0001]: docs/adrs/adr-0001-reuse-wireframe-for-budgeting-and-stream-parsing.md

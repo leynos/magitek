@@ -2,7 +2,7 @@
 
 - **Status:** Draft v0.1; proposed requirements with unresolved qualification
   questions. This document makes no implementation or release claim.
-- **Date:** 2026-11-14.
+- **Date:** 2026-11-19.
 - **Audience:** Magitek maintainers, Rust agent-host implementers, Podbot and
   Corbusier integrators, and reviewers of protocol and resource guarantees.
 - **Companion documents:** [Context and vocabulary](context.md),
@@ -74,16 +74,20 @@ maintenance cost by making those operational contracts reusable.
 | Agentkit SDK                      | A candidate transport path with explicit admission and resource charges. | Can the complete high-level path retain those bounds while meeting the chosen protocol profile?                       |
 | Mango ACP harness                 | A bounded peer beneath an application-oriented harness.                  | Can the reusable peer preserve the required event fidelity without importing harness policy?                          |
 | Podbot's existing proxy           | Sandbox transport, capability masking, and bounded proxy buffers.        | Which lower-level framing and enforcement contracts can serve both a proxy and a full client?                         |
+| Wireframe                         | Proposed bounded framing, reservation, and full-duplex primitives.       | Do the delivered primitives hold their bounds beneath the selected protocol engine?                                   |
 | Separate integration in each host | Immediate control over application-specific behaviour.                   | Can one shared implementation remove duplicated protocol failure handling without widening its scope?                 |
 
 *Table 1: Existing alternatives and the evidence needed to justify reuse.*
 
 The SDK remains the preferred foundation to qualify. The brief does not choose
-between upstream reuse, a small patch, or a different protocol engine. The
-qualification decision must compare measured behaviour and maintenance cost;
-wrapping an existing engine does not establish bounds inside that engine.
-[Context §3](context.md#3-evidence-and-knowledge-status) records the source
-baseline and the distinction between observation and proposal.
+between upstream reuse, a small patch, or a different protocol engine. Magitek
+plans to obtain budgeting and stream parsing from Wireframe beneath that
+engine, as
+[ADR 0001](adrs/adr-0001-reuse-wireframe-for-budgeting-and-stream-parsing.md)
+records. The qualification decision must compare measured behaviour and
+maintenance cost; wrapping an existing engine does not establish bounds inside
+that engine. [Context §3](context.md#3-evidence-and-knowledge-status) records
+the source baseline and the distinction between observation and proposal.
 
 ## 4. Users and stakeholders
 
@@ -230,17 +234,20 @@ merely to explain connection health.
 | A2  | Both initial consumers can provide independently driven transport and lifecycle information. | Define the missing consumer contract before claiming integration compatibility.                                  |
 | A3  | Representative agents accept explicit frame and concurrency limits.                          | Narrow the supported profile or revise limits using evidence; retain explicit rejection rather than silent loss. |
 | A4  | Consumers can state when they release or persist a delivered event.                          | Keep resource ownership explicit and withhold any downstream durability claim.                                   |
+| A5  | Wireframe delivers its proposed framing and reservation contracts for a standalone consumer. | Keep the dependent tasks blocked and select another source through a superseding decision record.                |
 
 *Table 4: Load-bearing assumptions and their failure consequences.*
 
 ### 8.3 Dependencies
 
 ACP specifications and the selected SDK establish compatibility inputs. Agent
-implementations supply interoperability evidence. Podbot's transport and
-control interface supplies the sandboxed-consumer boundary. The Rust
-Lody-replacement project supplies the second consumer and its persistence
-contract. None of these dependencies implies automatic upstream acceptance, an
-available hosted-session API, or a release date.
+implementations supply interoperability evidence. Wireframe supplies the
+planned framing and reservation primitives; the roadmap names the Wireframe
+task that gates each dependent Magitek task. Podbot's transport and control
+interface supplies the sandboxed-consumer boundary. The Rust Lody-replacement
+project supplies the second consumer and its persistence contract. None of
+these dependencies implies automatic upstream acceptance, an available
+hosted-session API, or a release date.
 
 ## 9. Open questions
 
@@ -264,9 +271,11 @@ OQ1 and OQ2 gate the implementation foundation. Later evidence can resolve the
 remaining questions within the product boundary. No open question permits a
 silent fallback that violates G1–G6.
 
-Candidate architectural decision records should cover the SDK integration
-basis, the event-ownership boundary, and the supported transport and protocol
-profiles. [magitek-design.md](magitek-design.md) records proposed mechanisms;
+[ADR 0001](adrs/adr-0001-reuse-wireframe-for-budgeting-and-stream-parsing.md)
+records the planned reuse of Wireframe. Candidate architectural decision
+records should cover the SDK integration basis, the event-ownership boundary,
+and the supported transport and protocol profiles.
+[magitek-design.md](magitek-design.md) records proposed mechanisms;
 [roadmap.md](roadmap.md) sequences the evidence and implementation work.
 Changes to users, goals, or non-goals update this document first. Changes to
 terminology update [context.md](context.md) and dependent documents together.
