@@ -129,18 +129,27 @@ No runtime code exists, so nothing migrates. Adoption proceeds as follows:
 
 1. Record the dependency and its gates in the design and roadmap (this
    change).
-2. When Wireframe task 21.8.1 is delivered, add the Wireframe dependency at a
-   pinned revision and qualify that revision for policy validation before
-   Magitek roadmap task 1.1.2 starts. Use an exact Git revision while no
-   published release contains the required interfaces; otherwise use a caret
-   requirement whose committed lock entry stays on the qualified release.
-3. Qualify the pinned revision beneath the shared conformance exchange, with
+2. When Wireframe task 21.8.1 is delivered, add the Wireframe dependency and
+   qualify the selected version for policy validation before Magitek roadmap
+   task 1.1.2 starts. Use an exact Git revision while no published release
+   contains the required interfaces. Once a release does, require that exact
+   version with an `=` requirement, so that a downstream consumer cannot
+   resolve an unqualified release. That requirement is a documented exception
+   to the workspace caret rule (AGENTS.md): the foundation decision (Magitek
+   roadmap task 1.2.6) records the exception and the qualified version before a
+   published release replaces the Git revision, and the exception is revisited
+   when Wireframe reaches 1.0. A caret requirement may replace it only when
+   every version it permits has a qualification record.
+3. Qualify the selected version beneath the shared conformance exchange, with
    an ownership map across every handoff between Wireframe and the candidate
    engine (Magitek roadmap task 1.2.5). This completes the full qualification
    after task 1.1.2 has converted a validated policy into a Wireframe profile.
-4. Re-run the ownership and compatibility corpus on every Wireframe revision
-   change, and move the pinned or locked revision only together with its
-   qualification record (Magitek roadmap task 4.4.2).
+4. Re-run the ownership and compatibility corpus on every Wireframe version
+   change, and change the pinned revision or exact requirement only together
+   with its qualification record (Magitek roadmap task 4.4.2). The release
+   matrix and compatibility statement name the qualified version, so a consumer
+   can check the version its own lockfile resolves before relying on the
+   advertised profile.
 
 ## Known risks and limitations
 
@@ -153,6 +162,12 @@ No runtime code exists, so nothing migrates. Adoption proceeds as follows:
 - **Pre-1.0 interfaces.** Wireframe 0.3.0 predates the phase 21 interfaces, and
   Wireframe's roadmap states that pre-1.0 interfaces may be replaced. No
   Wireframe roadmap task yet commits to a release that contains them.
+- **Downstream resolution.** A caret requirement would let a consumer's own
+  lockfile select an unqualified Wireframe release. The exact requirement in
+  step 2 removes that exposure, but it can conflict with another dependency
+  that needs a different Wireframe version. No other published crate is known
+  to depend on Wireframe; task 4.4.2 revisits the requirement when such a
+  consumer or a 1.0 release appears.
 - **Hidden handoffs.** Wireframe's checks cannot meter an engine's internal
   queues or arbitrary callback allocations. A bounded Wireframe layer beneath
   an unbounded SDK path does not satisfy goal G1.

@@ -184,10 +184,10 @@ written from nothing.
 
 The decision record must identify licences, dependency changes, the supported
 stable-v1 surface, outstanding upstream work, maintenance ownership, and the
-cost of carrying a patch. It must also pin the qualified Wireframe revision. A
-schema-only dispatcher changes the original SDK-reuse premise and therefore
-requires an explicit recorded decision. The roadmap permits that decision; this
-draft does not silently make it.
+cost of carrying a patch. It must also pin the qualified Wireframe revision or
+exact release. A schema-only dispatcher changes the original SDK-reuse premise
+and therefore requires an explicit recorded decision. The roadmap permits that
+decision; this draft does not silently make it.
 
 ### 3.3. Wireframe reuse and adoption gates
 
@@ -235,14 +235,18 @@ logic depends on Magitek-owned types, so a change of Wireframe revision cannot
 alter the public contract without a deliberate facade change. The enforced
 paths expose no Wireframe handle that bypasses accounting.
 
-Each adopted Wireframe revision needs a qualification record. It names the
-exact revision, the enforcement point behind every policy field, any
-conservative overcharge, and memory that remains outside the ledger. Wireframe
-cannot meter an engine's internal queues. The ownership map must therefore
-cover each handoff between Wireframe and the selected engine, and must show
-that the engine accepts admitted frames without an uncharged second read or
-parse. If Wireframe withdraws a gating contract, the dependent Magitek tasks
-remain blocked until a superseding decision record selects another source.
+Each adopted Wireframe revision or release needs a qualification record. It
+names the exact revision or version, the enforcement point behind every policy
+field, any conservative overcharge, and memory that remains outside the ledger.
+The release matrix and compatibility statement name the qualified version
+exactly, because a downstream consumer resolves the dependency in its own
+lockfile; a consumer that resolves another version is outside the advertised
+profile. Wireframe cannot meter an engine's internal queues. The ownership map
+must therefore cover each handoff between Wireframe and the selected engine,
+and must show that the engine accepts admitted frames without an uncharged
+second read or parse. If Wireframe withdraws a gating contract, the dependent
+Magitek tasks remain blocked until a superseding decision record selects
+another source.
 
 ## 4. Architecture and execution ownership
 
@@ -974,9 +978,11 @@ _Table 12: Decisions that remain open and the evidence that closes them._
 Version the public API deliberately. Pin protocol/schema dependencies and the
 Wireframe revision during qualification, and rerun the ownership/compatibility
 corpus on upgrades. Wireframe's phase 21 interfaces are pre-1.0 and may be
-replaced; use an exact revision until a published release contains them. Do not
-infer an ACP wire version from a Rust crate's major version. Revisit capability
-support explicitly as the stable schema evolves.
+replaced; use an exact revision until a published release contains them, then
+require that exact release until every version a caret requirement permits has
+a qualification record. Do not infer an ACP wire version from a Rust crate's
+major version. Revisit capability support explicitly as the stable schema
+evolves.
 
 Draft ACP v2, HTTP transports, Windows process qualification, durable remote
 reattachment, and alternate runtime adapters remain conditional. A future

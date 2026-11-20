@@ -69,7 +69,7 @@ qualification. See [magitek-design.md](magitek-design.md) §§1–5 and §10.
   - Requires 1.1.1.
   - Blocked by Wireframe 21.8.1 (immutable, expressive resource-policy
     validation). The Wireframe dependency is pinned to a qualified revision
-    before this task starts (ADR 0001, migration step 2).
+    or exact release before this task starts (ADR 0001, migration step 2).
   - See [magitek-design.md](magitek-design.md) §5 and the
     [proposed policy schema](contracts/resource-policy.schema.json).
   - Success: structural and relational checks reject impossible reservations,
@@ -140,9 +140,11 @@ would force reconsideration. See [magitek-design.md](magitek-design.md) §§3,
     Wireframe revision, and selects or rejects Wireframe's duplex session
     driver. It identifies bounding work, selects property-test tooling and a
     provisional minimum Rust version, and states patch ownership and licence
-    constraints. Upstream acceptance remains unassumed; a replacement engine
-    requires a recorded decision. No unqualified path enters the advertised
-    profile.
+    constraints. If a published Wireframe release supplies the interface, the
+    record states the exact `=` requirement and its documented exception to the
+    caret rule (ADR 0001). Upstream acceptance remains unassumed; a replacement
+    engine requires a recorded decision. No unqualified path enters the
+    advertised profile.
 
 ## 2. Deliver one bounded local ACP client
 
@@ -528,10 +530,11 @@ operating evidence part of the release decision. See
   - Blocked by Wireframe 21.8.10 (native interface migration and consumer
     qualification evidence).
   - See [magitek-design.md](magitek-design.md) §§3, 12, and 13.
-  - Success: the release matrix pins protocol, engine, schema, Wireframe
-    revision, agents, hosts, and feature profiles; an engine or Wireframe change
-    reruns relevant ownership and E2E checks. Fork patches, licences,
-    unsupported paths, and rollback constraints remain inspectable.
+  - Success: the release matrix pins protocol, engine, schema, the exact
+    Wireframe version consumers must resolve, agents, hosts, and feature
+    profiles; an engine or Wireframe change reruns relevant ownership and E2E
+    checks. Fork patches, licences, unsupported paths, and rollback constraints
+    remain inspectable.
 - [ ] 4.4.3. Record the release licence and supported implementation profile.
   - Requires 1.2.6, 2.4.5, and 4.4.2.
   - See [magitek-design.md](magitek-design.md) §§3, 12, and 13.
