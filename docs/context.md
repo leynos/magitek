@@ -1,8 +1,8 @@
 # Magitek – context and vocabulary
 
-- **Status:** Draft v0.1; vocabulary and evidence baseline for a proposed
+- **Status:** Draft v0.2; vocabulary and evidence baseline for a proposed
   library. No runtime implementation or qualification result exists here.
-- **Date:** 2026-11-19.
+- **Date:** 2026-11-20.
 - **Audience:** Maintainers and embedding-application implementers.
 - **Companion documents:** [Terms of reference](terms-of-reference.md),
   [technical design](magitek-design.md), and [GIST roadmap](roadmap.md).
@@ -94,6 +94,24 @@ invent a turn identifier by attaching the currently active operation to every
 event. ACP's [session-update schema][acp-schema] and
 [prompt-turn description][acp-turn] supply the compatibility context.
 
+### 2.4 Application ports and capability profiles
+
+An **ACP host port** is an interface owned by the embedding application and
+consumed by its domain logic. A **protocol adapter** implements that port using
+an ACP engine or client library. It differs from an execution adapter, which
+supplies process transport and lifecycle evidence. Youxia's proposed
+`AcpHostPort` has an initial official-SDK adapter and a later Magitek adapter;
+Magitek's core depends on neither the port nor Youxia.
+
+**Capability support** describes implemented operations and negotiated peer
+features. **Availability** describes whether installed host services, current
+authority, and admitted capacity permit an operation now. **Qualification**
+records evidence for the guarantees of a pinned implementation profile.
+Unavailable or unqualified does not mean unsupported, and none of these labels
+establishes non-submission after possible publication. The
+[design §10.4](magitek-design.md#104-application-owned-acp-host-ports) defines
+the admission and generation rules.
+
 ## 3. Evidence and knowledge status
 
 The documentation uses three knowledge classes:
@@ -150,6 +168,15 @@ dependent tasks cannot start before the Wireframe tasks that deliver them, and
 a bounded Wireframe layer does not bound an ACP engine placed above it.
 [ADR 0001](adrs/adr-0001-reuse-wireframe-for-budgeting-and-stream-parsing.md)
 records the decision and its risks.
+
+The proposed
+[ADR 0002](adrs/adr-0002-support-application-owned-acp-host-ports.md) lets
+application-port vocabulary and consumer fixtures develop before those runtime
+gates. Youxia's separate `acpsdk`/`arun` experiment can exercise the host seam
+without a Magitek dependency. It supplies feedback about the port; it does not
+qualify Magitek's resource accounting or select its engine. A later adapter
+change uses a fresh protocol generation, with unresolved work fenced. Raw byte
+replay and process survival do not restore Magitek's lost in-memory state.
 
 The technical design resolves these tensions as proposed contracts. The roadmap
 tests them before widening adoption. The first delivery gate requires one local

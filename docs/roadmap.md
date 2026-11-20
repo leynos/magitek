@@ -30,8 +30,17 @@ that must be complete before the Magitek task starts; Wireframe's own
 prerequisites apply transitively. "Requires" entries name Magitek tasks only. A
 conditional entry applies only if task 1.2.6 selects Wireframe's duplex session
 driver. Every cited Wireframe task was unchecked at the inspected revision, so
-only tasks 1.1.3 and 1.2.1 can start before Wireframe delivers task 21.8.1.
+only the contract and fixture tasks 1.1.3, 1.1.4, 1.2.1, and 1.2.7 can proceed
+before Wireframe delivers task 21.8.1, subject to their local prerequisites.
 [Wireframe issue 929][wireframe-adoption-issue] tracks that pathway.
+
+[ADR 0002](adrs/adr-0002-support-application-owned-acp-host-ports.md) proposes
+the two additional early tasks and the application-owned adapter boundary.
+Youxia's independent [roadmap step 1.5][youxia-spike] can spike its
+`AcpHostPort`, raw `arun` transport, and experimental official-SDK adapter
+without waiting for Magitek or Wireframe. That spike does not satisfy task
+1.2.2 or any bounded runtime gate below. Tasks 4.2.1–4.2.3 later qualify the
+Magitek adapter against the same consumer contract.
 
 ## 1. Qualify the foundation and contract
 
@@ -83,6 +92,16 @@ qualification. See [magitek-design.md](magitek-design.md) §§1–5 and §10.
   - Success: public types distinguish rejection before submission, uncertain
     submission, peer terminal evidence, transport closure, and process exit;
     compile-time examples cannot substitute a delivery watermark for durability.
+- [ ] 1.1.4. Define capability, availability, and qualification contracts for
+  application adapters.
+  - Requires 1.1.3.
+  - See [magitek-design.md](magitek-design.md) §§2.3 and 10.4, and
+    [ADR 0002](adrs/adr-0002-support-application-owned-acp-host-ports.md).
+  - Success: executable examples distinguish implementation support, peer
+    negotiation, installed host services, mutable authority/readiness, and
+    qualification. Typed refusals preserve those distinctions; the contract
+    cannot relabel possible publication as non-submission. No Wireframe runtime
+    dependency or implemented adapter claim enters this contract-only task.
 
 ### 1.2. Select an engine by its complete retained-work path
 
@@ -145,6 +164,16 @@ would force reconsideration. See [magitek-design.md](magitek-design.md) §§3,
     caret rule (ADR 0001). Upstream acceptance remains unassumed; a replacement
     engine requires a recorded decision. No unqualified path enters the
     advertised profile.
+- [ ] 1.2.7. Publish portable consumer fixtures for ACP host-port adapters.
+  - Requires 1.1.4 and 1.2.1.
+  - See [magitek-design.md](magitek-design.md) §§7–10 and 12.2, and
+    [Youxia's port contract][youxia-port].
+  - Success: a versioned fixture corpus and reference traces cover unsupported
+    operations without publication, ordered updates before completion, policy
+    revocation, temporarily unavailable services, cancellation evidence, and
+    stale callbacks across adapter generations. A fake exercises the contract
+    without model inference or a runtime engine; passing it does not qualify
+    either real adapter or Magitek's accounted bounds.
 
 ## 2. Deliver one bounded local ACP client
 
@@ -265,12 +294,13 @@ establishes the distinction between delivery and persistence. See
 
 - [ ] 2.4.1. Implement stable ACP v1 initialization, session creation, and
   prompting.
-  - Requires 1.1.3 and 2.3.3.
+  - Requires 1.1.4 and 2.3.3.
   - See [magitek-design.md](magitek-design.md) §§8 and 10.
   - Success: initialization and non-prompt timers cover admission through
     response; capabilities match implemented methods and concurrent calls retain
     one active prompt per session. Admitted extension fields survive round trips
-    or produce an explicit unsupported result.
+    or produce an explicit unsupported result. Negotiated support stays fixed
+    for a generation, while admission rechecks policy and service readiness.
 - [ ] 2.4.2. Deliver charged session events and completion watermarks.
   - Requires 2.1.1 and 2.4.1.
   - See [magitek-design.md](magitek-design.md) §§7 and 10.
@@ -456,20 +486,22 @@ change. See [magitek-design.md](magitek-design.md) §§6, 10, and 13.
     preserve the enforcement boundary; tests verify allowed bytes and extension
     fields without accepting overflow as a policy bypass.
 
-### 4.2. Integrate the native Lody host without owning durability
+### 4.2. Qualify the Youxia adapter without owning host durability
 
-Can Lody map command and history durability onto Magitek's explicit evidence
-without slowing the connection driver? This step validates the client use case
-and keeps the Ishiban observation milestone independent. See
-[magitek-design.md](magitek-design.md) §§7, 9–10, and 13.
+Can Youxia replace its provisional SDK adapter through its own ACP host port
+while preserving command and history durability? This step qualifies the
+Magitek adapter against the consumer contract and keeps observation and the
+early SDK spike independent. See [magitek-design.md](magitek-design.md) §§7,
+9–10, and 13.
 
-- [ ] 4.2.1. Implement the native-host command admission adapter.
-  - Requires 3.2.3 and 3.3.2.
+- [ ] 4.2.1. Qualify the Youxia-owned Magitek command admission adapter.
+  - Requires 1.2.7, 3.2.3, and 3.3.2.
   - See [magitek-design.md](magitek-design.md) §§9–10.
   - Success: a host-owned durable command record precedes submission; the
     adapter records rejection, known result, or unknown outcome without blind
-    replay. The native host's journal interface is an explicit external gate;
-    Magitek imports no storage or authentication implementation.
+    replay. Youxia owns the adapter implementation, port, and journal; their
+    availability is an explicit external gate. Magitek carries integration
+    fixtures, with no dependency on Youxia, storage, or authentication code.
 - [ ] 4.2.2. Integrate incremental history consumption through charged events.
   - Requires 4.2.1 and 2.4.2.
   - See [magitek-design.md](magitek-design.md) §§5, 7, and 10.
@@ -483,7 +515,12 @@ and keeps the Ishiban observation milestone independent. See
   - Success: a pinned native host and real ACP agent preserve command
     uncertainty and history ordering through disconnect and restart; an
     independent local reader verifies the declared intent and history records.
-    Cloud catalogue and peer-convergence checks stay in the daemon's roadmap.
+    Run the shared consumer corpus through the real Magitek adapter over
+    `arun`, compare it with the SDK experiment's recorded profile, and verify
+    missing capabilities and stale replies cannot gain authority. Adapter
+    replacement starts a fresh generation; unrecoverable protocol state remains
+    `recovery_required`. Cloud convergence and production fleet qualification
+    stay in Youxia's roadmap, including its adapter replacement task 3.2.6.
 
 ### 4.3. Preserve declared budgets under shared-host contention
 
@@ -612,3 +649,5 @@ actual adoption. See [magitek-design.md](magitek-design.md) §§4, 10, and 13.
 
 [wireframe-roadmap]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/docs/roadmap.md#21-protocol-neutral-adapters-for-the-first-consumers
 [wireframe-adoption-issue]: https://github.com/leynos/wireframe/issues/929
+[youxia-port]: https://github.com/leynos/youxia/blob/284127edaf6b78e9db7a504dc4215c7ac5ef016f/docs/contracts/acp-host-port.md
+[youxia-spike]: https://github.com/leynos/youxia/blob/284127edaf6b78e9db7a504dc4215c7ac5ef016f/docs/roadmap.md#15-spike-the-local-agent-loop-through-an-acp-host-port

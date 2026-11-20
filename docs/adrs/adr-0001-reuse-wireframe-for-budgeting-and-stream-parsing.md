@@ -8,6 +8,11 @@ native-protocol primitives. Adoption of each capability waits for the Wireframe
 roadmap task that delivers it and for Magitek's own qualification of a pinned
 Wireframe revision. No Wireframe dependency exists in `Cargo.toml` yet.
 
+Proposed amendment:
+[ADR 0002](adr-0002-support-application-owned-acp-host-ports.md) (2026-11-20)
+extends the inventory of early contract work. The accepted Wireframe reuse
+decision and its runtime gates remain unchanged.
+
 ## Date
 
 2026-11-19.
@@ -189,6 +194,15 @@ that supersedes this one; a silent fallback is not permitted.
   roadmap task 4.1.1 decides this.
 - Whether the foundation gate selects Wireframe's duplex session driver.
   Magitek roadmap task 1.2.6 records that decision.
+
+## Amendments
+
+ADR 0002 proposes two additional contract-only tasks, 1.1.4 and 1.2.7, that can
+proceed before Wireframe task 21.8.1. The sequencing statement under "Known
+risks and limitations" records the task inventory at this decision's
+acceptance. The proposed extension does not permit a dependent runtime task to
+start early or count an external application's SDK experiment as Magitek
+qualification. ADR 0002 remains Proposed until reviewed.
 
 ## Architectural rationale
 
