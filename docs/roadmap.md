@@ -68,7 +68,8 @@ qualification. See [magitek-design.md](magitek-design.md) §§1–5 and §10.
 - [ ] 1.1.2. Implement immutable resource-policy validation.
   - Requires 1.1.1.
   - Blocked by Wireframe 21.8.1 (immutable, expressive resource-policy
-    validation).
+    validation). The Wireframe dependency is pinned to a qualified revision
+    before this task starts (ADR 0001, migration step 2).
   - See [magitek-design.md](magitek-design.md) §5 and the
     [proposed policy schema](contracts/resource-policy.schema.json).
   - Success: structural and relational checks reject impossible reservations,

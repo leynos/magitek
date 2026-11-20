@@ -97,15 +97,15 @@ ______________________________________________________________________
 Magitek's proposed client owns ACP interaction within one connection. Its host
 owns the environment and the consequences of agent work.
 
-| Responsibility                                             | Proposed owner           |
-| ---------------------------------------------------------- | ------------------------ |
-| ACP negotiation, correlation, event order, and admission   | Magitek client           |
-| Framing and resource-reservation primitives                | Reusable Magitek layer   |
-| Proxy inspection, authorization, and forwarding policy     | Podbot                   |
-| Process launch, placement, termination, and restart        | Host                     |
-| Filesystem authority and permission decisions              | Host                     |
-| Command journals, durable history, Loro sync, and recovery | Host                     |
-| Ishiban work-item identity and workflow state              | Ishiban and its adapters |
+| Responsibility                                             | Proposed owner                  |
+| ---------------------------------------------------------- | ------------------------------- |
+| ACP negotiation, correlation, event order, and admission   | Magitek client                  |
+| Framing and resource-reservation primitives                | Wireframe, via Magitek adapters |
+| Proxy inspection, authorization, and forwarding policy     | Podbot                          |
+| Process launch, placement, termination, and restart        | Host                            |
+| Filesystem authority and permission decisions              | Host                            |
+| Command journals, durable history, Loro sync, and recovery | Host                            |
+| Ishiban work-item identity and workflow state              | Ishiban and its adapters        |
 
 _Table 1: Proposed responsibility boundaries._
 

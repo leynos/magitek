@@ -129,14 +129,18 @@ No runtime code exists, so nothing migrates. Adoption proceeds as follows:
 
 1. Record the dependency and its gates in the design and roadmap (this
    change).
-2. Qualify a pinned Wireframe revision beneath the shared conformance
-   exchange, with an ownership map across every handoff between Wireframe and
-   the candidate engine (Magitek roadmap task 1.2.5).
-3. Add the Wireframe dependency with a caret requirement, or an exact Git
-   revision while no published release contains the required interfaces, when
-   the first dependent task starts.
-4. Re-run the ownership and compatibility corpus on every Wireframe upgrade
-   (Magitek roadmap task 4.4.2).
+2. When Wireframe task 21.8.1 is delivered, add the Wireframe dependency at a
+   pinned revision and qualify that revision for policy validation before
+   Magitek roadmap task 1.1.2 starts. Use an exact Git revision while no
+   published release contains the required interfaces; otherwise use a caret
+   requirement whose committed lock entry stays on the qualified release.
+3. Qualify the pinned revision beneath the shared conformance exchange, with
+   an ownership map across every handoff between Wireframe and the candidate
+   engine (Magitek roadmap task 1.2.5). This completes the full qualification
+   after task 1.1.2 has converted a validated policy into a Wireframe profile.
+4. Re-run the ownership and compatibility corpus on every Wireframe revision
+   change, and move the pinned or locked revision only together with its
+   qualification record (Magitek roadmap task 4.4.2).
 
 ## Known risks and limitations
 
