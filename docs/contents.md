@@ -20,6 +20,8 @@
 - [ADR 0001](adrs/adr-0001-reuse-wireframe-for-budgeting-and-stream-parsing.md)
   – planned reuse of Wireframe for budgeting and stream parsing, with its
   adoption gates.
+- [ADR 0002](adrs/adr-0002-support-application-owned-acp-host-ports.md) –
+  application-owned ports, provisional adapters, and later qualification.
 
 ## Contract artefacts
 
@@ -37,6 +39,8 @@
   adaptations for Magitek.
 - [Import execution plan](execplans/import-rust-template-repo-baseline.md) –
   approved scope, implementation progress, and acceptance evidence.
+- [ACP port execution plan](execplans/acp-host-port-and-adapter-spike.md) –
+  scope and validation for the paired host-port and adapter roadmap changes.
 - [Documentation style](documentation-style-guide.md) – writing, Markdown,
   architectural decisions, and roadmap conventions.
 - [Polonius policy](polonius.md) – pinned compiler and borrow-centric API

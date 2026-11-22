@@ -1,7 +1,7 @@
 # Magitek – technical design
 
-- **Status:** Draft v0.2; proposed architecture, no implementation claim.
-- **Date:** 2026-11-19.
+- **Status:** Draft v0.3; proposed architecture, no implementation claim.
+- **Date:** 2026-11-20.
 - **Audience:** Rust library implementers, host integrators, and reviewers.
 - **Scope:** A bounded asynchronous Agent Client Protocol (ACP) client and
   reusable protocol framing and resource-accounting primitives.
@@ -64,6 +64,12 @@ The proposed first implementation has these boundaries:
    waits for the Wireframe roadmap task that delivers it. Section 3.3 and
    [ADR 0001](adrs/adr-0001-reuse-wireframe-for-budgeting-and-stream-parsing.md)
    record this decision.
+8. Support application-owned ACP host ports through a narrow adapter to the
+   Magitek facade. A provisional official-SDK adapter can develop the host
+   independently; it does not inherit Magitek's qualification claims. Section
+   10.4 and
+   [ADR 0002](adrs/adr-0002-support-application-owned-acp-host-ports.md) define
+   the boundary and replacement conditions.
 
 This draft does not select a JSON-RPC engine, promise a fixed resident memory
 ceiling, or claim that library scheduling guarantees host heartbeats. JSON-RPC
@@ -834,6 +840,76 @@ force protocol closure; it cannot produce a false durable-success response.
 Ishiban's read-only catalogue and observation work remain independent of this
 ACP-hosting integration.
 
+### 10.4. Application-owned ACP host ports
+
+An embedding application owns the interface consumed by its domain logic.
+Youxia calls that interface `AcpHostPort` and owns both the provisional
+`youxia-acp-acpsdk` adapter to the official Rust SDK and the later
+`youxia-acp-magitek` adapter to this library. These are planned module names;
+the adapter identities are `acpsdk` and `magitek`, with no separate published
+crate requirement. Magitek supplies its general client facade; it does not
+import the Youxia port or own either adapter. The
+[Youxia port contract][youxia-acp-host-port] defines the consuming interface.
+
+The port follows the semantics in sections 7–10: connection/session operations,
+ordered typed events, explicit host-service requests, submission evidence,
+distinct cancellation actions, and independent protocol and process status.
+Concrete engine handles, schema wrappers, and error types stay inside each
+adapter. The application supplies permission policy, host services, storage,
+and raw transport. An adapter may translate a Magitek event lease only while
+preserving its lifetime charge or transferring into an admitted host-owned
+sink; copying into an unaccounted queue invalidates the bounded profile.
+
+Capability-aware consumption separates these dimensions:
+
+| Dimension               | Meaning and lifetime                                                                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Implementation support  | Operations the pinned adapter and engine implement; fixed for that implementation profile.                                                  |
+| Peer negotiation        | Operations the connected agent negotiated, such as session loading; scoped to its protocol generation.                                      |
+| Host services           | Installed permission, authentication, filesystem, and terminal services; client advertisement includes only installed, authorized services. |
+| Authority and readiness | Current policy and service availability; rechecked when admitting each operation or reverse request.                                        |
+| Qualification           | Evidence that the selected implementation, transport, and limits satisfy the requested guarantee profile.                                   |
+
+_Table 10: Capability support and availability are separate from qualification._
+
+Keep the implementation and negotiated capability snapshot immutable for a
+protocol generation. Runtime policy revocation, a failed service, or exhausted
+capacity affects admission and typed status; it does not silently widen or
+renegotiate the advertised surface. A host must establish a new negotiated
+generation before relying on newly advertised services.
+
+Return distinct reasons for unsupported implementation or peer capability,
+disabled policy, unavailable service, capacity exhaustion, and missing
+qualification. Check these conditions at admission, before publication or host
+effects. A feature query is advisory: admission must recheck mutable authority
+and readiness. Once publication may have begun, section 9.1 governs the
+outcome. An unavailable service cannot turn an uncertain prompt into
+`NotSubmitted` or authorize automatic replay.
+
+Optional features may be absent. Truthful submission evidence, generation
+fencing, and honest event completeness remain mandatory for every adapter. An
+adapter must reject a requested guarantee profile it cannot establish. Youxia
+may explicitly select an experimental SDK profile that reports its unqualified
+resource paths, but it cannot advertise Magitek's accounted bounds or satisfy
+the production hosting gate with that profile. Finite outer queues alone do not
+qualify the SDK paths identified in section 3.1.
+
+Select and record the adapter identity, implementation revision, port-contract
+version, and capability profile when constructing a protocol generation.
+Replacement uses a fresh generation, normally for a new run. Switching an
+active stream to another engine would require a separately qualified state
+migration contract. Replacing a socket attachment on surviving pipes does not
+create a fresh ACP conversation. Magitek's in-memory state and session loading
+do not supply that migration contract. Hosts must fence unresolved work and
+preserve `recovery_required` when their recovery evidence is insufficient.
+
+Youxia's `arun` owns the agent process transport and retained raw bytes under
+its system supervisor; it does not parse ACP or select the engine. The same raw
+transport contract can therefore feed either daemon-side adapter. A live driver
+reattaching to transport, a new generation loading a session, and a new daemon
+restoring protocol state are separate capabilities. Process survival and byte
+replay alone establish neither of the latter two.
+
 ## 11. Observability and diagnostics
 
 Expose a compact snapshot per connection and shared budget. Record admitted,
@@ -883,7 +959,7 @@ and failure evidence reproducible without paid model inference.
 | P7: Enforcement continuity    | An enforced proxy never switches to uninspected forwarding on overflow, malformed input, or partial EOF.                                 | Byte-preserving allow/deny fixtures under all fragmentation cases. Does not replace host authorization policy.                      |
 | P8: Conditional progress      | With declared executor service and a cooperative peer, admitted bounded work progresses; otherwise a defined failure becomes observable. | Virtual-time stalls and qualified real-runtime measurements. No unconditional scheduler or network liveness proof.                  |
 
-_Table 10: Correctness properties, evidence methods, and exclusions._
+_Table 11: Correctness properties, evidence methods, and exclusions._
 
 Use FizzBee for the small admission/publication/close model, with at most two
 connections, two operations per connection, and small permit counts. Check
@@ -921,6 +997,11 @@ proxy modes. Mandatory combinations include:
   replacement-connection admission.
 - A silent peer and a held host handler, with distinct progress ages and
   status evidence despite similar missing-output symptoms.
+- An application adapter with a missing optional capability, revoked host
+  authority, or temporarily unavailable service, including admission racing
+  those changes and rejection without publication or host effects.
+- Replacement by another adapter in a fresh generation, with old permission
+  replies and uncertain operations fenced under the same consumer contract.
 
 Cover remaining profile combinations pairwise after these risk-selected cases.
 Record excluded combinations explicitly; pairwise coverage does not replace the
@@ -943,7 +1024,7 @@ or deployment promises.
 | Largest supported frame | Exact-limit traffic completes within declared conditions; one-byte-over traffic fails before excess retention.                                                                             |
 | Combined failure        | Every mandatory section 12.2 combination yields a bounded, typed outcome and no false successful prefix.                                                                                   |
 
-_Table 11: Proposed release evidence, separate from policy defaults._
+_Table 12: Proposed release evidence, separate from policy defaults._
 
 Use a runner profile within the programme's four-vCPU/eight-GiB ceiling; record
 which CPU service the driver actually receives. A dedicated thread alone is not
@@ -962,6 +1043,15 @@ client, host services/lifecycle semantics, and real consumer integrations
 before release qualification. Deferred work has no edge into those required
 phases unless a supported consumer establishes that dependency explicitly.
 
+Youxia's [roadmap step 1.5][youxia-spike] develops an experimental local
+`youxiad`/`arun` loop against its official-SDK adapter independently of Magitek
+and Wireframe delivery. Magitek tasks 1.1.3, 1.1.4, 1.2.1, and 1.2.7 can define
+the shared vocabulary and executable fixture contract before the Wireframe
+runtime gates open. The spike supplies integration feedback; it completes
+neither the foundation qualification exchange nor a bounded hosting milestone.
+Later tasks 4.2.1–4.2.3 qualify the Magitek adapter against that consumer
+contract and real host behaviour.
+
 | Decision                            | Evidence required                                                                                                 | Owner role / gate                           |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | Implementation foundation           | Complete ownership map and must-pass fixtures for upstream, Agentkit, and the reusable Mango peer where feasible. | Library maintainers; phase 1.               |
@@ -973,7 +1063,7 @@ phases unless a supported consumer establishes that dependency explicitly.
 | Release licence and support policy  | Maintainer choice and dependency-licence compatibility; no assumed licence.                                       | Repository maintainers; before publication. |
 | Additional transports/platforms     | A concrete consumer, bounded transport behaviour, and lifecycle qualification.                                    | Maintainers; conditional phase 5.           |
 
-_Table 12: Decisions that remain open and the evidence that closes them._
+_Table 13: Decisions that remain open and the evidence that closes them._
 
 Version the public API deliberately. Pin protocol/schema dependencies and the
 Wireframe revision during qualification, and rerun the ownership/compatibility
@@ -1053,3 +1143,5 @@ are normative proposals in this document, not claims about those sources.
 [wireframe-rfc-0006]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/docs/rfcs/rfc-0006-configurable-framing-primitives.md
 [wireframe-rfc-0007]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/docs/rfcs/rfc-0007-budgets-scheduling-and-assembly.md
 [wireframe-rfc-0008]: https://github.com/leynos/wireframe/blob/052065fa61cfc93d730f8a75a794da1a959dc2ca/docs/rfcs/rfc-0008-external-adapter-conformance-harness.md
+[youxia-acp-host-port]: https://github.com/leynos/youxia/blob/284127edaf6b78e9db7a504dc4215c7ac5ef016f/docs/contracts/acp-host-port.md
+[youxia-spike]: https://github.com/leynos/youxia/blob/284127edaf6b78e9db7a504dc4215c7ac5ef016f/docs/roadmap.md#15-spike-the-local-agent-loop-through-an-acp-host-port
