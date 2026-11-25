@@ -120,6 +120,10 @@ fixture exceptions in the local overlay. `make markdownlint` also runs spelling;
 Merman releases and runs `make nixie`, so a diagram that fails locally fails
 the pull request too.
 
+The builder requires Python 3.14, so the `Makefile` runs it with
+`uv tool run --python 3.14`. `uv` downloads that interpreter when it is
+missing; environments that forbid downloads must provide Python 3.14.
+
 ## CI and repository administration
 
 PR CI checks formatting, Markdown and Mermaid validation, spelling, lint,
