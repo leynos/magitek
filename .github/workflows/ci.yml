@@ -19,7 +19,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Setup Rust
-        uses: leynos/shared-actions/.github/actions/setup-rust@b804b69fa7f978cf9091b9d9bd5481d8ce58c2ea
+        uses: leynos/shared-actions/.github/actions/setup-rust@ab6505246c6b043b742a225e428e00448c0a37af
         with:
           rustflags: -Zpolonius=next
           # mold accelerates dev builds; coverage uses lld for llvm-tools compatibility.
@@ -47,12 +47,12 @@ jobs:
       - name: Setup uv
         uses: astral-sh/setup-uv@12d13f90bc3a5a1971bebad4beb09a4dfa962e91
       - name: Install the YAML lint tools
-        uses: leynos/shared-actions/.github/actions/install-yaml-lint@26c918632c5413039a84358fafe012a4399a9ec7
+        uses: leynos/shared-actions/.github/actions/install-yaml-lint@ab6505246c6b043b742a225e428e00448c0a37af
       # `make nixie` is a public target, so CI provisions exactly the Nixie and
       # Merman versions it needs instead of leaving Mermaid validation to the
       # developer's machine.
       - name: Install Nixie
-        uses: leynos/shared-actions/.github/actions/install-nixie@26c918632c5413039a84358fafe012a4399a9ec7
+        uses: leynos/shared-actions/.github/actions/install-nixie@ab6505246c6b043b742a225e428e00448c0a37af
       - name: Validate Mermaid diagrams
         run: make nixie
       - name: Check workflow contracts
@@ -101,7 +101,7 @@ jobs:
           echo "Coverage CFLAGS: -fuse-ld=lld"
           echo "Coverage LDFLAGS: -fuse-ld=lld"
       - name: Test and Measure Coverage
-        uses: leynos/shared-actions/.github/actions/generate-coverage@dbe2e22ceaf498d85512679ccded38be9dbe7777
+        uses: leynos/shared-actions/.github/actions/generate-coverage@ab6505246c6b043b742a225e428e00448c0a37af
         env:
           CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: clang
           RUSTFLAGS: -Zpolonius=next -C link-arg=-fuse-ld=lld
