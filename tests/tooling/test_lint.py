@@ -13,6 +13,7 @@ class LintTests(RepositoryTest):
     """Exercise the tool boundary, including its selection and failure paths."""
 
     def test_yaml_rejects_defect_and_handles_spaces(self):
+        """Reject duplicate YAML keys in a spaced path and accept a clean file."""
         path = "settings with spaces.yaml"
         self.write(path, "key: first\nkey: second\n")
         self.track(path)
@@ -22,6 +23,7 @@ class LintTests(RepositoryTest):
         self.make("lint-yaml")
 
     def test_actions_reject_invalid_expression(self):
+        """Reject an undefined workflow expression and accept a valid one."""
         path = ".github/workflows/test.yml"
         self.write(
             path,
@@ -43,6 +45,7 @@ jobs:
         self.make("lint-actions")
 
     def test_shell_rejects_defect_and_empty_selection_passes(self):
+        """Reject an unquoted shell variable and pass an empty shell selection."""
         self.make("lint-shell")
         path = "scripts/bad name.sh"
         self.write(path, "#!/bin/sh\necho $unquoted\n")
@@ -53,6 +56,7 @@ jobs:
         self.make("lint-shell")
 
     def test_missing_lint_tools_fail_with_help(self):
+        """Fail each lint target with install help when its tool is missing."""
         for target, option, diagnostic in (
             ("lint-yaml", "YAMLLINT", "yamllint is required"),
             ("lint-actions", "ACTIONLINT", "actionlint is required"),
@@ -67,6 +71,7 @@ jobs:
                 self.assertIn(diagnostic, result.stdout)
 
     def test_git_failure_is_not_empty_success(self):
+        """Fail the YAML and shell lints when git itself errors."""
         self.write("bin/git", "#!/bin/sh\nexit 23\n", executable=True)
         env = {"PATH": str(self.repo / "bin") + ":" + self.env["PATH"]}
         for target in ("lint-yaml", "lint-shell"):
@@ -74,6 +79,7 @@ jobs:
                 self.make(target, command=CommandOptions(env=env, expected="failure"))
 
     def test_markdown_check_includes_untracked_and_excludes_ignored(self):
+        """Check untracked Markdown is formatted and ignored Markdown is left alone."""
         self.write(".gitignore", "ignored.md\n")
         self.write("ignored.md", "ignored " * 40 + "\n")
         self.write("draft.md", "# Draft\n\n" + "word " * 40 + "\n")

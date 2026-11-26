@@ -14,6 +14,7 @@ class CoverageLaneTests(LaneFixture):
     """Check coverage target selection and the instrumentation it must refuse."""
 
     def test_coverage_exclusion_preserves_targets_and_refuses_conflicts(self):
+        """Check UI-target exclusion is idempotent and refuses conflicting filters."""
         self.probe("ordinary")
         self.probe("compile_probe")
         self.run_command("bash", "scripts/exclude-ui-targets.sh")
@@ -61,6 +62,7 @@ class CoverageLaneTests(LaneFixture):
         )
 
     def test_coverage_requires_nextest_to_exclude_compile_targets(self):
+        """Refuse coverage that falls back to cargo test, writing no report."""
         result = self.make(
             "coverage",
             "CHECK_COVERAGE_TOOLS=true",
@@ -78,6 +80,7 @@ class CoverageLaneTests(LaneFixture):
         )
 
     def test_coverage_overrides_the_development_cranelift_flags(self):
+        """Produce instrumented coverage despite development Cranelift rustflags."""
         self.write(
             ".cargo/config.toml",
             """[build]

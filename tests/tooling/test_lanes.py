@@ -91,6 +91,7 @@ class LaneTests(LaneFixture):
     """Check selected tests, cleanup boundaries and actual timeout termination."""
 
     def test_normal_ui_and_cargo_fallback_retain_tests(self):
+        """Check the test, UI and cargo-fallback lanes select the right targets."""
         self.probe("ordinary")
         self.probe("compile_probe")
         options = ("CHECK_BUILD_TOOLS=true",)
@@ -122,6 +123,7 @@ class LaneTests(LaneFixture):
         )
 
     def test_empty_ui_lane_is_an_explicit_noop(self):
+        """Report an empty UI lane as an explicit no-op."""
         result = self.make(
             "test-ui",
             "CHECK_BUILD_TOOLS=true",
@@ -203,6 +205,7 @@ class LaneTests(LaneFixture):
         )
 
     def test_timeouts_terminate_a_hanging_test(self):
+        """Check that per-test and global timeouts each terminate a hanging test."""
         config = self.repo / ".config/nextest.toml"
         text = config.read_text()
         profile = tomllib.loads(text)["profile"]["default"]
