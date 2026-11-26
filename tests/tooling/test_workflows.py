@@ -172,6 +172,7 @@ class WorkflowTests(RepositoryTest):
         )
 
     def test_shared_checker_rejects_a_pr_secret_leak(self) -> None:
+        """Reject a second workflow that reads the CodeScene access token."""
         shutil.copytree(ROOT / ".github", self.repo / ".github")
         self.make("test-workflow-contracts", command=CommandOptions(timeout=120))
         path = self.repo / ".github/workflows/ci.yml"

@@ -1,4 +1,4 @@
-.PHONY: test-tooling typecheck help all clean test test-ui build release coverage lint lint-actions lint-shell lint-yaml fmt check-fmt markdownlint spelling test-workflow-contracts nixie audit rust-audit install-build-tools install-cranelift check-build-tools check-rust-toolchain check-coverage-tools
+.PHONY: test-tooling typecheck help all clean test test-ui build release coverage lint lint-actions lint-shell lint-yaml fmt check-fmt markdownlint spelling test-workflow-contracts nixie audit rust-audit install-build-tools install-cranelift check-build-tools check-rust-toolchain check-coverage-tools interrogate
 
 SHELL := bash
 
@@ -197,7 +197,19 @@ lint-shell: ## Lint tracked shell scripts
 	fi
 	@set -o pipefail; git ls-files -z '*.sh' | xargs -0 -r $(SHELLCHECK)
 
-lint: check-build-tools lint-yaml lint-actions lint-shell ## Run Clippy with warnings denied
+# Interrogate measures docstring presence in the Python files under
+# INTERROGATE_TARGETS; add a new Python directory there. No `--python` pin: a
+# managed interpreter would be downloaded.
+INTERROGATE_VERSION ?= 1.7.0
+INTERROGATE_TARGETS ?= tests
+INTERROGATE = $(UV) tool run --from 'interrogate==$(INTERROGATE_VERSION)' interrogate --fail-under 100
+
+# To list each undocumented definition, run
+# `make interrogate INTERROGATE_TARGETS="-vv tests"`.
+interrogate: ## Enforce complete Python docstring coverage
+	$(INTERROGATE) $(INTERROGATE_TARGETS)
+
+lint: interrogate check-build-tools lint-yaml lint-actions lint-shell ## Run interrogate, Clippy and Whitaker with warnings denied
 	PATH="$(BUILD_TOOLS_PATH)" RUSTDOCFLAGS="$(RUSTDOC_FLAGS)" RUSTFLAGS="$(DEV_RUST_FLAGS)" $(CARGO) doc --no-deps
 	PATH="$(BUILD_TOOLS_PATH)" RUSTFLAGS="$(DEV_RUST_FLAGS)" $(CARGO) clippy $(CLIPPY_FLAGS)
 	@echo "Whitaker binary: $(WHITAKER)"
