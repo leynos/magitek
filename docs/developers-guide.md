@@ -44,6 +44,16 @@ markdownlint-cli2, and nixie. CI explicitly provisions its prerequisites. Local
 Whitaker installation is separate from the build-tools installer; the Makefile
 resolves it from PATH or `~/.local/bin/whitaker`.
 
+The Makefile runs the `interrogate` and CV-005 contract tools through the
+vendored `scripts/uv_gate.py` helper (`UV_GATE`, which needs `python3` on
+`PATH`). The helper selects the global uv cache, runs offline first and makes
+at most one online attempt when a tool is not cached yet. A uv that reports only
+`Git operation failed` for a Git source missing from the cache is not retried:
+warm the cache once with `uv tool run` on that source, or use a uv that names
+the offline reason. The spelling builder keeps its direct release-tag call,
+because the spelling baseline requires that form and the helper accepts only a
+full commit. The Makefile has no `UV` override; the helper finds uv on `PATH`.
+
 ## Compiler and linker policy
 
 The dated nightly in rust-toolchain.toml uses Polonius Alpha through
